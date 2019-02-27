@@ -27,11 +27,14 @@ import static asammourbot.tagger.getRegexRecords;
 import static asammourbot.tagger.wiki;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  *
@@ -41,37 +44,11 @@ public class addTitleURL {
 
     public static void checkNoTitle(ArrayList pages) throws IOException, InterruptedException, FailedLoginException, LoginException {
         for (Object tmp : pages) {
-            String content = wiki.getPageText(tmp.toString());
-            Pattern pattern = Pattern.compile("\\<ref\\>\\[[^ ]{15,}\\]\\<\\/ref\\>", Pattern.CASE_INSENSITIVE);
-            Matcher urlMatcher = pattern.matcher(content);
 
-            while (urlMatcher.find()) {
-                String url = urlMatcher.group();
-                String withoutRef = url.replace("<ref>[", "").replace("]</ref>", "");
-
-                org.jsoup.nodes.Document document = null;
-
-                try {
-                    document = Jsoup.connect(withoutRef).get();
-                } catch (Exception e) {
-
-                }
-                if (document != null) {
-                    if (!document.title().toLowerCase().contains("move") 
-                            && !document.title().toLowerCase().contains("delete")
-                            && !document.title().toLowerCase().contains("perment")
-                            && !document.title().toLowerCase().contains("object")
-                            && !document.title().toLowerCase().contains("error")
-                            && !document.title().toLowerCase().contains("error")
-                            && !document.title().toLowerCase().contains("fail")){
-                        
-                    }
-                    content = content.replace(url, url.replace("]</ref>", " "+document.title()+"]</ref>"));
-                    content = decodeUrl(content);
-                    wiki.login("ASammourBot", "crome801501101");
-                    wiki.edit(tmp.toString(), content, "روبوت:إضافة عنوان آلي لرابط بدون عنوان", true, true, -2, null);
-                }
-            }
+            org.jsoup.nodes.Document document = null;
+            Tead1 t = new Tead1(document, tmp.toString());
+            t.start();
+            Thread.sleep(700);
         }
     }
 
@@ -138,6 +115,70 @@ public class addTitleURL {
         content = content.replace("%D9%A8", "٨");
         content = content.replace("%D9%A9", "٩");
         return content;
+
     }
 
+    static class Tead1 extends Thread {
+
+        Document document;
+        String title;
+
+        public Tead1(Document document, String title) {
+            this.title = title;
+            this.document = document;
+        }
+
+        @Override
+        public void run() {
+            String content = "";
+            String orig = "";
+            int count = 0;
+            try {
+                content = wiki.getPageText(title.toString());
+                orig = content;
+            } catch (IOException ex) {
+                Logger.getLogger(addTitleURL.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            Pattern pattern = Pattern.compile("\\<ref\\>\\[[^ ]{15,}\\]\\<\\/ref\\>", Pattern.CASE_INSENSITIVE);
+            Matcher urlMatcher = pattern.matcher(content);
+
+            while (urlMatcher.find()) {
+                String url = urlMatcher.group();
+                String withoutRef = url.replace("<ref>[", "").replace("]</ref>", "");
+
+                try {
+                    document = Jsoup.connect(withoutRef).followRedirects(false).get();
+                } catch (Exception e) {
+
+                }
+                if (document != null) {
+                    if (!document.title().toLowerCase().contains("move")
+                            && !document.title().toLowerCase().contains("delete")
+                            && !document.title().toLowerCase().contains("perment")
+                            && !document.title().toLowerCase().contains("object")
+                            && !document.title().toLowerCase().contains("error")
+                            && !document.title().toLowerCase().contains("error")
+                            && !document.title().toLowerCase().contains("fail")
+                            && !document.title().toLowerCase().contains("sorry")
+                            && !document.title().toLowerCase().contains("found")
+                            && !document.title().toLowerCase().contains("404")
+                            && !document.title().trim().equals("")) {
+                        content = content.replace("<ref>[" + withoutRef + "]</ref>", "<ref>[" + withoutRef + " " + document.title() + "]</ref>");
+                        content = decodeUrl(content);
+                        count = count + 1;
+                    }
+                }
+            }
+            if (!orig.equals(content)) {
+                try {
+                    Tead t = new Tead(title, content, "روبوت:إضافة عنوان لمرجع غير معنون (" + count + ")");
+                    t.start();
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(addTitleURL.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+        }
+    }
 }

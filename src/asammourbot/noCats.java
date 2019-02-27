@@ -86,7 +86,7 @@ public class noCats {
     public static void run() throws IOException, FailedLoginException, LoginException, ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
         Wiki wiki = new Wiki("ar.wikipedia.org");
 
-        String[] langs = {"fr", "de", "pt", "ru", "ja", "es", "he", "it","fa","tr","da","pl", "uk","ko","cs"};
+        String[] langs = {"fr", "de", "pt", "ru", "ja", "es", "he", "it","fa","tr","da","pl", "uk","ko","cs","ceb","sv","nl"};
 
         for (String tmp : langs) {
             List pages = getSqlRecords("select p.page_title, group_concat(p3.page_title SEPARATOR '***') as cats\n"

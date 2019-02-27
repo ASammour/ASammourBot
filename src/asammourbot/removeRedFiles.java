@@ -210,6 +210,22 @@ public class removeRedFiles {
                 + "AND page_namespace = 6))\n"
                 + "AND page_namespace = 10;"));
 
+        pages.addAll(getSqlRecords("SELECT CONCAT(\"وحدة:\",page_title) AS page_title, CONCAT(il_to) AS il_to\n"
+                + "FROM page\n"
+                + "JOIN imagelinks\n"
+                + "ON page_id = il_from\n"
+                + "WHERE (NOT EXISTS(\n"
+                + "SELECT 1\n"
+                + "FROM image\n"
+                + "WHERE img_name = il_to))\n"
+                + "AND (NOT EXISTS(\n"
+                + "SELECT\n"
+                + "1\n"
+                + "FROM commonswiki_p.page\n"
+                + "WHERE page_title = il_to\n"
+                + "AND page_namespace = 6))\n"
+                + "AND page_namespace = 828;"));
+        
         for (Object tmp : pages) {
             String title = tmp.toString().split(",,,,,,,")[0];
             String file = tmp.toString().split(",,,,,,,")[1];
