@@ -69,5 +69,9 @@ public class main {
             noCats.run();
         }
         
+        if (param.equals("redirects")){
+            redirects.run();
+        }
+        
     }
 }
