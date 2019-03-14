@@ -48,7 +48,7 @@ import org.wikipedia.Wiki;
 public class oppositeCats {
 
     static String addedCats = "";
-    
+
     public static List getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {
 
         List records = new ArrayList();
@@ -140,9 +140,9 @@ public class oppositeCats {
                 + "and l1.ll_lang like \"en\"\n"
                 + "and el.ll_lang like \"ar\"\n"
                 + "group by p.page_title\n"
-                + "limit 10;");
-        
-        pages.addAll(getSqlRecords("select concat(\"تصنيف:\",p.page_title), group_concat(p3.page_title SEPARATOR '***') as \"cats\"\n"
+                + "limit 1;");
+
+        pages.addAll(getSqlRecords("select p.page_title, group_concat(el.ll_title SEPARATOR '***')\n"
                 + "from page p\n"
                 + "inner join langlinks l1\n"
                 + "on l1.ll_from = p.page_id\n"
@@ -157,25 +157,23 @@ public class oppositeCats {
                 + "inner join page p3\n"
                 + "on p3.page_title = replace(replace(el.ll_title, \"تصنيف:\",\"\"), \" \", \"_\")\n"
                 + "where p.page_is_redirect = 0\n"
-                + "and p.page_namespace = 14\n"
-                + "and enwiki_p.page.page_namespace = 0\n"
-                + "and enwiki_p.page.page_is_redirect = 0\n"
-                + "and enwiki_p.page.page_touched < SUBDATE(NOW(),1)\n"
                 + "and p2.page_id not in (select enwiki_p.categorylinks.cl_from from enwiki_p.categorylinks  where enwiki_p.categorylinks.cl_to = 'Hidden_categories')\n"
                 + "and p.page_id not in (select cl_from from categorylinks where cl_to = p3.page_title)\n"
                 + "and p3.page_id not in (select cl_from from categorylinks  where cl_to = 'تصنيفات_مخفية')\n"
-                + "and p3.page_id not in (select cl_from from categorylinks  where cl_to = 'أحداث_جارية')\n"
                 + "and p3.page_id not in (select cl_from from categorylinks  where cl_to = 'تحويلات_تصنيفات_ويكيبيديا')\n"
                 + "and p3.page_title not like \"صفحات_توضيح%\"\n"
+                + "and p.page_namespace =14\n"
                 + "and p.page_id not in (select cl_from from categorylinks  where cl_to = 'صفحات_لا_تقبل_التصنيف_المعادل')\n"
+                + "and enwiki_p.page.page_namespace = 14\n"
+                + "and enwiki_p.page.page_is_redirect = 0\n"
+                + "and enwiki_p.page.page_touched < SUBDATE(NOW(),1)\n"
                 + "and p2.page_is_redirect = 0\n"
                 + "and p2.page_namespace = 14\n"
                 + "and p3.page_namespace = 14\n"
                 + "and p3.page_is_redirect = 0\n"
                 + "and l1.ll_lang like \"en\"\n"
                 + "and el.ll_lang like \"ar\"\n"
-                + "group by p.page_title\n"
-                + "limit 10;"));
+                + "group by el.ll_title;"));
 
         for (Object tmp : pages) {
             String title = tmp.toString().split(",,,,,,,")[0];
@@ -184,11 +182,11 @@ public class oppositeCats {
             for (String cat : cats) {
                 System.out.println("********" + cat);
                 cat = cat.replace("_", " ");
-                addedCats = addedCats + "+ [[تصنيف:"+cat+"]] "; //ملخص التعديل
+                addedCats = addedCats + "+ [[تصنيف:" + cat + "]] "; //ملخص التعديل
                 content = content + "\n\n" + "[[تصنيف:" + cat + "]]\n"; //إضافة إلى نص المقالة
             }
 
-            Tead t = new Tead(title, sortcats(content), "روبوت التصانيف المعادلة (1.0): "+addedCats);
+            Tead t = new Tead(title, sortcats(content), "روبوت التصانيف المعادلة (1.0): " + addedCats);
             t.start();
             Thread.sleep(1500);
             addedCats = "";

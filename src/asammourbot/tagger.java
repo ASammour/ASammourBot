@@ -72,18 +72,18 @@ public class tagger {
     static Set pages = new HashSet();
 
     public static String getDate() {
-        SimpleDateFormat ar = new SimpleDateFormat("MMMM yyyy", new Locale("ar"));
+        SimpleDateFormat ar = new SimpleDateFormat("MMMM", new Locale("ar"));
         Date date = new Date();
-        return ar.format(date);
+        return ar.format(date) + " "+Calendar.getInstance().get(Calendar.YEAR);
     }
 
     public static String getDate2(Date d) {
-        SimpleDateFormat ar = new SimpleDateFormat("MMMM yyyy", new Locale("ar"));
+        SimpleDateFormat ar = new SimpleDateFormat("MMMM", new Locale("ar"));
+        SimpleDateFormat year = new SimpleDateFormat("yyyy");
         Calendar c = Calendar.getInstance();
         c.setTime(d);
         Date current = c.getTime();
-        System.out.println(current);
-        return ar.format(current);
+        return ar.format(current) + " "+year.format(current);
     }
 
     public static ArrayList getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {
@@ -297,6 +297,23 @@ public class tagger {
     }
 
     public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, FailedLoginException, LoginException, InterruptedException {
+        System.out.println(getDate());
+        ArrayList addSource = getRegexRecords("-insource:/\\<ref/ -incategory:\"صفحات بها مراجع ويكي بيانات\" -hastemplate:\"مصدر\" -hastemplate:\"مصدر وحيد\" -hastemplate:\"مصادر أكثر\" -incategory:\"مرجع من ويكي بيانات\" -hastemplate:\"سيرة شخصية غير موثقة\" -hastemplate:\"جرايز\" -incategory:\"بوابة تقويم/مقالات متعلقة\" -hastemplate:\"Sfn\" -incategory:\"صفحات توضيح\"");
+        prepend(addSource, "{{مصدر|تاريخ=", "إضافة [[قالب:مصدر]]", false);
+
+        ArrayList removeSource = getRegexRecords("insource:/\\<ref/ hastemplate:\"مصدر\"");
+        removeSource.addAll(getRegexRecords("incategory:\"صفحات بها مراجع ويكي بيانات\" hastemplate:\"مصدر\""));
+        removeSource.addAll(getRegexRecords("incategory:\"مرجع من ويكي بيانات\" hastemplate:\"مصدر\""));
+
+        remove(removeSource, "\\{\\{مصدر\\|.{1,}\\}\\}\n", "إزالة [[قالب:مصدر]]");
+
+        ArrayList deadButAlive = getRegexRecords("incategory:\"أشخاص على قيد الحياة\" incategory:\"وفيات 2018\"");
+        remove(deadButAlive, "\\[\\[تصنيف:أشخاص على قيد الحياة\\]\\]\n", "إزالة [[تصنيف:أشخاص على قيد الحياة]] من شخصيات متوفاة");
+
+        ArrayList editing = checkEditing(getRegexRecords("hastemplate:\"تحرر\""));
+        remove(editing, "\\{\\{تحرر\\}\\}", "إزالة [[قالب:تحرر]] بعد مرور 7 أيام على آخر تعديل");
+        remove(editing, "\\{\\{يحرر\\}\\}", "إزالة [[قالب:تحرر]] بعد مرور 7 أيام على آخر تعديل");
+        remove(editing, "\\{\\{تحرير كثيف\\}\\}", "إزالة [[قالب:تحرر]] بعد مرور 7 أيام على آخر تعديل");
 
         ArrayList disTemplate = getSqlRecords("select page_title\n"
                 + "from page\n"
@@ -306,7 +323,6 @@ public class tagger {
                 + "and page_id not in (select cl_from from categorylinks where cl_from = page_id and cl_to like \"صفحات_توضيح\");");
 
         append(disTemplate, "{{توضيح", " إضافة [[قالب:توضيح]] لصفحة توضيح", false);
-
 
         ArrayList newDeath = new ArrayList();
         newDeath.addAll(Arrays.asList(wiki.getCategoryMembers("تصنيف:وفيات حديثة", false, 0)));
@@ -402,6 +418,16 @@ public class tagger {
         remove(removeNoCats, "\\{\\{غير مصنفة.{2,25}\\}\\}\n", "إزالة [[قالب:غير مصنفة]]");
         remove(removeNoCats, "\\{\\{بذرة غير مصنفة.{2,25}\\}\\}\n", "إزالة [[قالب:بذرة غير مصنفة]]");
 
+        ArrayList addStub = getSqlRecords("select page_title \n"
+                + "from page\n"
+                + "where page_is_redirect = 0\n"
+                + "and page_namespace = 0\n"
+                + "and page_id not in (select cl_from from categorylinks where cl_to = \"جميع_مقالات_البذور\" and cl_from = page_id)\n"
+                + "and page_id not in (select cl_from from categorylinks where cl_to = \"صفحات_توضيح\" and cl_from = page_id)\n"
+                + "and page_id not in (select cl_from from categorylinks where cl_to = \"صفحات_للحذف_السريع\" and cl_from = page_id)\n"
+                + "and page_len < 1500;");
+        append(addStub, "{{بذرة", "إضافة [[قالب:بذرة]]", false);
+
         ArrayList commons = getSqlRecords("select page_title from  \n"
                 + "page\n"
                 + "inner join page_props\n"
@@ -428,6 +454,100 @@ public class tagger {
                 + "                                                   ;");
 
         insertSister(commons, "قالب:كومنز", "wb-otherproject-commons", "https://commons.wikimedia.org/wiki/", "commons");
+
+        ArrayList addOrphan = getSqlRecords("SELECT page_title,(select count(distinct pl_from) \n"
+                + "                from pagelinks \n"
+                + "                where pl_from_namespace = 0 \n"
+                + "                and pl_title in (\n"
+                + "                       select page_title from redirect inner join page on rd_from = page_id where page_namespace = 0 and rd_title = p.page_title\n"
+                + "                and rd_namespace = 0)\n"
+                + "                and pl_namespace = 0\n"
+                + "                and pl_from in (select page_id\n"
+                + "                                from page\n"
+                + "                                where page_id = pl_from\n"
+                + "                                and page_namespace = 0\n"
+                + "                                and page_is_redirect = 0)\n"
+                + "                and pl_from not in (select (pl_from)\n"
+                + "                from pagelinks \n"
+                + "                where pl_from_namespace = 0 \n"
+                + "                and pl_title = page_title\n"
+                + "                and pl_namespace = 0\n"
+                + "                and pl_from in (select page_id\n"
+                + "                                from page\n"
+                + "                                where page_id = pl_from\n"
+                + "                                and page_namespace = 0\n"
+                + "                                and page_is_redirect = 0))\n"
+                + "               and pl_from <> page_id   \n"
+                + "               )\n"
+                + "				+\n"
+                + "				(select count(distinct pl_from)\n"
+                + "                from pagelinks \n"
+                + "                where pl_from_namespace = 0 \n"
+                + "                and pl_title = page_title\n"
+                + "                and pl_namespace = 0\n"
+                + "                and pl_from in (select page_id\n"
+                + "                                from page\n"
+                + "                                where page_id = pl_from\n"
+                + "                                and page_namespace = 0\n"
+                + "                                and page_is_redirect = 0)\n"
+                + "                 and pl_from <> page_id \n"
+                + "               )\n"
+                + "               as counts\n"
+                + "FROM page p\n"
+                + "where page_namespace = 0\n"
+                + "and page_is_redirect = 0\n"
+                + "and page_id  not in (select cl_from from categorylinks where cl_to like \"%جميع_المقالات_اليتيمة%\" and cl_from = page_id)\n"
+                + "and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
+                + "having counts < 3;");
+
+        prepend(addOrphan, "{{يتيمة|تاريخ=", "إضافة [[قالب:يتيمة]]", false);
+
+        ArrayList removeOrphan = getSqlRecords("SELECT page_title,(select count(distinct pl_from) \n"
+                + "                from pagelinks \n"
+                + "                where pl_from_namespace = 0 \n"
+                + "                and pl_title in (\n"
+                + "                       select page_title from redirect inner join page on rd_from = page_id where page_namespace = 0 and rd_title = p.page_title\n"
+                + "                and rd_namespace = 0)\n"
+                + "                and pl_namespace = 0\n"
+                + "                and pl_from in (select page_id\n"
+                + "                                from page\n"
+                + "                                where page_id = pl_from\n"
+                + "                                and page_namespace = 0\n"
+                + "                                and page_is_redirect = 0)\n"
+                + "                and pl_from not in (select (pl_from)\n"
+                + "                from pagelinks \n"
+                + "                where pl_from_namespace = 0 \n"
+                + "                and pl_title = page_title\n"
+                + "                and pl_namespace = 0\n"
+                + "                and pl_from in (select page_id\n"
+                + "                                from page\n"
+                + "                                where page_id = pl_from\n"
+                + "                                and page_namespace = 0\n"
+                + "                                and page_is_redirect = 0))\n"
+                + "               and pl_from <> page_id   \n"
+                + "               )\n"
+                + "				+\n"
+                + "				(select count(distinct pl_from)\n"
+                + "                from pagelinks \n"
+                + "                where pl_from_namespace = 0 \n"
+                + "                and pl_title = page_title\n"
+                + "                and pl_namespace = 0\n"
+                + "                and pl_from in (select page_id\n"
+                + "                                from page\n"
+                + "                                where page_id = pl_from\n"
+                + "                                and page_namespace = 0\n"
+                + "                                and page_is_redirect = 0)\n"
+                + "                 and pl_from <> page_id \n"
+                + "               )\n"
+                + "               as counts\n"
+                + "FROM page p\n"
+                + "where page_namespace = 0\n"
+                + "and page_is_redirect = 0\n"
+                + "and page_id  in (select cl_from from categorylinks where cl_to like \"%جميع_المقالات_اليتيمة%\" and cl_from = page_id)\n"
+                + "and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
+                + "having counts >= 3;");
+
+        remove(removeOrphan, "\\{\\{يتيمة\\|.{2,20}\\}\\}\n", "إزالة [[قالب:يتيمة]]");
 
         ArrayList wiktionary = getSqlRecords("select (page_title) from  \n"
                 + "page\n"
@@ -557,137 +677,5 @@ public class tagger {
 
         insertSister(wikibooks, "قالب:ويكي الكتب", "wb-otherproject-wikibooks", "https://ar.wikibooks.org/wiki/", "wikibooks");
 
-        /*ArrayList disgOrphan = getRegexRecords("incategory:\"صفحات توضيح\" intitle:\"(توضيح)\" hastemplate:\"يتيمة\"");
-        
-        remove (disgOrphan, "\\{\\{يتيمة\\|.{2,20}\\}\\}\n", "إزالة [[قالب:يتيمة]] من صفحة توضيح");
-        
-        ArrayList disgResources = getRegexRecords("incategory:\"صفحات توضيح\" intitle:\"(توضيح)\" hastemplate:\"مصدر\"");
-        
-        remove (disgResources, "\\{\\{مصدر\\|.{2,20}\\}\\}\n", "إزالة [[قالب:مصدر]] من صفحة توضيح");
-        
-        
-        ArrayList disgStub = getRegexRecords("incategory:\"صفحات توضيح\" intitle:\"(توضيح)\" hastemplate:\"بذرة\"");
-        
-        remove (disgStub, "\\{\\{بذرة.{2,20}\\}\\}\n", "إزالة [[قالب:بذرة]] من صفحة توضيح");
-         */
-        ArrayList deadButAlive = getRegexRecords("incategory:\"أشخاص على قيد الحياة\" incategory:\"وفيات 2018\"");
-        remove(deadButAlive, "\\[\\[تصنيف:أشخاص على قيد الحياة\\]\\]\n", "إزالة [[تصنيف:أشخاص على قيد الحياة]] من شخصيات متوفاة");
-
-        /*ArrayList withoutLinks = getRegexRecords("-insource:/\\[\\[[^ت][^ص][^ن][^ي][^ف][^:].{3,}/i -incategory:\"صفحات توضيح\" -intitle:\"(توضيح)\" -hastemplate:\"نهاية مسدودة\"");
-
-        ArrayList deadEnd = checkDeadEnd(withoutLinks);
-        
-        ضع النجمة بسبب التعليق
-        ArrayList deadEnd1 = checkDeadEnd(getRegexRecords("-insource:/\\[\\[./ -hastemplate:\"صفحات توضيح\" -incategory:\"صفحات توضيح\" -hastemplate:\"نهاية مسدودة\" -intitle:\"(توضيح)\""));
-
-        prepend(deadEnd, "{{نهاية مسدودة|تاريخ=", "إضافة [[قالب:نهاية مسدودة]]", false);
-        prepend(deadEnd1, "{{نهاية مسدودة|تاريخ=", "إضافة [[قالب:نهاية مسدودة]]", false);
-
-        ArrayList nowWiki = checkNoWiki(withoutLinks);
-        prepend(deadEnd, "{{وصلات قليلة|تاريخ=", "إضافة [[قالب:وصلات قليلة]]", false);*/
- /*ArrayList deadAndNoWiki = checkDeadEnd((getRegexRecords("hastemplate:\"وصلات قليلة\" hastemplate:\"نهاية مسدودة\"")));
-        remove(deadAndNoWiki, "\\{\\{وصلات قليلة\\|.{2,20}\\}\\}\n", "إزالة [[قالب:وصلات قليلة]]");
-        
-        ArrayList deadAndNoWiki1 = checkNoWiki((getRegexRecords("hastemplate:\"وصلات قليلة\" hastemplate:\"نهاية مسدودة\"")));
-        
-        remove(deadAndNoWiki1, "\\{\\{نهاية مسدودة\\|.{2,20}\\}\\}\n", "إزالة [[قالب:نهاية مسدودة]]");*/
-        ArrayList addOrphan = getSqlRecords("SELECT page_title,(select count(distinct pl_from) \n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title in (\n"
-                + "                       select page_title from redirect inner join page on rd_from = page_id where page_namespace = 0 and rd_title = p.page_title\n"
-                + "                and rd_namespace = 0)\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                and pl_from not in (select (pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0))\n"
-                + "               and pl_from <> page_id   \n"
-                + "               )\n"
-                + "				+\n"
-                + "				(select count(distinct pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                 and pl_from <> page_id \n"
-                + "               )\n"
-                + "               as counts\n"
-                + "FROM page p\n"
-                + "where page_namespace = 0\n"
-                + "and page_is_redirect = 0\n"
-                + "and page_id  not in (select cl_from from categorylinks where cl_to like \"%جميع_المقالات_اليتيمة%\" and cl_from = page_id)\n"
-                + "and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "having counts < 3;");
-
-        prepend(addOrphan, "{{يتيمة|تاريخ=", "إضافة [[قالب:يتيمة]]", false);
-
-        ArrayList removeOrphan = getSqlRecords("SELECT page_title,(select count(distinct pl_from) \n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title in (\n"
-                + "                       select page_title from redirect inner join page on rd_from = page_id where page_namespace = 0 and rd_title = p.page_title\n"
-                + "                and rd_namespace = 0)\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                and pl_from not in (select (pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0))\n"
-                + "               and pl_from <> page_id   \n"
-                + "               )\n"
-                + "				+\n"
-                + "				(select count(distinct pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                 and pl_from <> page_id \n"
-                + "               )\n"
-                + "               as counts\n"
-                + "FROM page p\n"
-                + "where page_namespace = 0\n"
-                + "and page_is_redirect = 0\n"
-                + "and page_id  in (select cl_from from categorylinks where cl_to like \"%جميع_المقالات_اليتيمة%\" and cl_from = page_id)\n"
-                + "and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "having counts >= 3;");
-
-        remove(removeOrphan, "\\{\\{يتيمة\\|.{2,20}\\}\\}\n", "إزالة [[قالب:يتيمة]]");
-
-        ArrayList editing = checkEditing(getRegexRecords("hastemplate:\"تحرر\""));
-        remove(editing, "\\{\\{تحرر\\}\\}", "إزالة [[قالب:تحرر]] بعد مرور 7 أيام على آخر تعديل");
-        remove(editing, "\\{\\{يحرر\\}\\}", "إزالة [[قالب:تحرر]] بعد مرور 7 أيام على آخر تعديل");
-        remove(editing, "\\{\\{تحرير كثيف\\}\\}", "إزالة [[قالب:تحرر]] بعد مرور 7 أيام على آخر تعديل");
     }
 }

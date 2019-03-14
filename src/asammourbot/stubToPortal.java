@@ -23,6 +23,7 @@
  */
 package asammourbot;
 
+import static asammourbot.tagger.wiki;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,7 +33,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 import org.wikipedia.Wiki;
@@ -41,7 +41,7 @@ import org.wikipedia.Wiki;
  *
  * @author ASammour
  */
-public class redirects {
+public class stubToPortal {
 
     public static List getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {
 
@@ -67,73 +67,56 @@ public class redirects {
 
         // iterate through the java resultset
         while (rs.next()) {
-            String redirect = rs.getString("rd_title");
-            String title = rs.getString("page_title");
-            String namespace = rs.getString("page_namespace");
+            String firstName = rs.getString("page_title");
+            String file = rs.getString("stub");
 
-            records.add(redirect + ",,,,,,," + title + ",,,,,,," + namespace);
+            records.add(firstName + ",,,,,,," + file);
         }
         return records;
     }
 
-    public static Object getKeyFromValue(LinkedHashMap hm, Object value) {
-        for (Object o : hm.keySet()) {
-            if (hm.get(o).equals(value)) {
-                return o;
+    public static void append(String page, String template, String summary) throws InterruptedException, IOException {
+        String content = wiki.getPageText(page);
+
+        if (!content.contains("{{شريط بوابات")) {
+            if (content.contains("[[تصنيف:")) {
+                content = content.replaceFirst("\\[\\[تصنيف\\:", template + "\n\n[[تصنيف:");
+            } else {
+                content = content + "\n\n" + template;
+            }
+
+            content = content.replace("{{مقالات بحاجة لشريط بوابات}}\n", "");
+            Tead t = new Tead(page, content, summary);
+            t.start();
+
+            while (t.isAlive()) {
+                Thread.sleep(5000);
             }
         }
-        return null;
+
     }
 
     public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
         Wiki wiki = new Wiki("ar.wikipedia.org");
 
-        List broken = getSqlRecords("select rd_title, page_title, page_namespace from redirect \n"
-                + "inner join page \n"
-                + "on page_id =rd_from\n"
-                + "where rd_title not in (select page_title from page where page_title= rd_title and rd_namespace = page_namespace)\n"
-                + "and page_is_redirect = 1\n"
-                + "and rd_namespace >= 0\n"
-                + "and rd_interwiki = \"\"\n"
-                + "limit 100;");
+        List pages = getSqlRecords("select page_title, (select replace(cl_to, \"بذرة_\",\"\") from categorylinks where cl_from = page_id and cl_to like \"بذرة%\" limit 1) as \"stub\"\n"
+                + "from page\n"
+                + "where page_namespace = 0\n"
+                + "and page_is_redirect = 0\n"
+                + "and page_id in (select cl_from from categorylinks where cl_from = page_id and cl_to = \"مقالات_بحاجة_لشريط_بوابات\")\n"
+                + "and page_id in (select cl_from from categorylinks where cl_from = page_id and cl_to like \"بذرة%\")\n"
+                + "and (select replace(cl_to, \"بذرة_\",\"\") from categorylinks where cl_from = page_id and cl_to like \"بذرة%\" limit 1) in (select page_title from\n"
+                + "                                                                                                                 page \n"
+                + "                                                                                                                 where page_namespace = 100\n"
+                + "                                                                                                                 and page_is_redirect = 0\n"
+                + "                                                                                                                 );");
 
-        List doub = getSqlRecords("select rd_title, page_title, page_namespace from redirect \n"
-                + "inner join page \n"
-                + "on page_id =rd_from\n"
-                + "where rd_title in (select page_title from page where page_title= rd_title and rd_namespace = page_namespace and page_is_redirect = 1)\n"
-                + "and page_is_redirect = 1\n"
-                + "and rd_namespace >= 0\n"
-                + "and rd_interwiki = \"\"\n"
-                + "limit 100;");
+        for (Object tmp : pages) {
+            String title = tmp.toString().split(",,,,,,,")[0];
+            String stub = tmp.toString().split(",,,,,,,")[1];
 
-        for (Object tmp : broken) {
-            String title = tmp.toString().split(",,,,,,,")[1];
-            String namespace = tmp.toString().split(",,,,,,,")[2];
-            String redirect = tmp.toString().split(",,,,,,,")[0];
-            title = (getKeyFromValue(wiki.getNamespaces(), Integer.parseInt(namespace)).toString().trim() + ":" + title).replace("^:", "");
-
-            String content = wiki.getPageText(title);
-            Tead t = new Tead(title, "{{شطب|وسم آلي لتحويلة مكسورة}}\n" + content, "روبوت:تحويلة مكسورة");
-            t.start();
-            Thread.sleep(1000);
-        }
-
-        for (Object tmp : doub) {
-            String title = tmp.toString().split(",,,,,,,")[1];
-            String namespace = tmp.toString().split(",,,,,,,")[2];
-            String redirect = wiki.resolveRedirect(tmp.toString().split(",,,,,,,")[0]);
-            title = (getKeyFromValue(wiki.getNamespaces(), Integer.parseInt(namespace)).toString().trim() + ":" + title).replaceAll("^:", "");
+            append (title, "{{شريط بوابات|"+stub.replace("_", " ")+"}}", "روبوت:إضافة شريط بوابات من قالب البذرة +[[بوابة:"+stub+"]]");
             
-            System.out.println("Title is: " + title);
-            System.out.println("namespace is: " + namespace);
-            System.out.println("redirect is: " + redirect);
-
-            String content = wiki.getPageText(title);
-            content = content.replace("[[" + tmp.toString().split(",,,,,,,")[0].replace("_", " ") + "]]", "[[" + redirect + "]]");
-            Tead t = new Tead(title, content, "روبوت:إصلاح وصلة مزدوجة");
-            t.start();
-            Thread.sleep(1000);
-
         }
     }
 }

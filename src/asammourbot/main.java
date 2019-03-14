@@ -73,5 +73,18 @@ public class main {
             redirects.run();
         }
         
+        if (param.equals("stubToPortal")){
+            stubToPortal.run();
+        }
+        
+        if (param.equals("addcats")){
+            addCats.run();
+        }
+        
+        if (param.equals("portaltostub")){
+            portalToStub.run();
+        }
+        
+        
     }
 }

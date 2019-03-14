@@ -78,7 +78,8 @@ public class frPortals {
     }
 
     public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
-        List pages = getSqlRecords("SELECT p.page_title, group_concat(el.ll_title SEPARATOR '***') as ll_title\n"
+        List pages = getSqlRecords("SELECT p.page_title,\n"
+                + "       group_concat(el.ll_title SEPARATOR '***') AS ll_title\n"
                 + "FROM page p\n"
                 + "INNER JOIN langlinks l1 ON l1.ll_from = p.page_id\n"
                 + "INNER JOIN frwiki_p.page frpage ON (frpage.page_title) = (replace(l1.ll_title, \" \", \"_\"))\n"
@@ -97,25 +98,37 @@ public class frPortals {
                 + "  AND frtemp.tl_from_namespace = 0\n"
                 + "  AND frtemp.tl_namespace = 10\n"
                 + "  AND el.ll_lang LIKE \"ar\"\n"
-                + "  and frtemp.tl_title like \"Portail%\"\n"
-                + "  AND p.page_id not in (select cl_from from categorylinks where cl_to = concat(\"بوابة_\", p3.page_title ,\"/مقالات_متعلقة\"))\n"
+                + "  AND frtemp.tl_title LIKE \"Portail%\"\n"
+                + "  AND p.page_id NOT IN\n"
+                + "    (SELECT cl_from\n"
+                + "     FROM categorylinks\n"
+                + "     WHERE cl_to = concat(\"بوابة_\", p3.page_title, \"/مقالات_متعلقة\"))\n"
                 + "  AND l1.ll_lang LIKE \"fr\"\n"
-                + "  AND p.page_title not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = p.page_title)"
-                + "  group by p.page_title\n"
-                + ";");
+                + "  AND p.page_title NOT IN\n"
+                + "    (SELECT cl_from\n"
+                + "     FROM categorylinks\n"
+                + "     WHERE cl_to LIKE \"%صفحات_توضيح%\"\n"
+                + "       AND cl_from = p.page_title)\n"
+                + "  AND p.page_title NOT IN\n"
+                + "    (SELECT cl_from\n"
+                + "     FROM categorylinks\n"
+                + "     WHERE cl_to LIKE \"%الصفحات_التي_لا_تقبل_ربط_البوابات_المعادل%\"\n"
+                + "       AND cl_from = p.page_title)\n"
+                + "GROUP BY p.page_title;");
 
         for (Object tmp : pages) {
             String summary = "";
             String title = tmp.toString().split(",,,,,,,")[0];
             String[] portals = tmp.toString().split(",,,,,,,")[1].split("\\*\\*\\*");
             String portalsText = "";
+            String content = wiki.getPageText(title);
+
             for (String tmp1 : portals) {
-                if (!tmp1.contains("مثلية") && !tmp1.contains("إرهاب")) {
+                if (!tmp1.contains("مثلية") && !tmp1.contains("إرهاب") && !content.contains("|" + tmp1.replace("بوابة:", "")) && !content.contains("لا لربط البوابات")) {
                     portalsText = portalsText + "|" + tmp1.replace("بوابة:", "");
                     summary = summary + ": [[" + tmp1 + "]]";
                 }
             }
-            String content = wiki.getPageText(title);
 
             if (content.contains("{{شريط بوابات")) {
                 content = content.replace("{{شريط بوابات|", "{{شريط بوابات" + portalsText + "|");

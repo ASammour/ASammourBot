@@ -86,7 +86,7 @@ public class noCats {
     public static void run() throws IOException, FailedLoginException, LoginException, ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
         Wiki wiki = new Wiki("ar.wikipedia.org");
 
-        String[] langs = {"fr", "de", "pt", "ru", "ja", "es", "he", "it","fa","tr","da","pl", "uk","ko","cs","ceb","sv","nl"};
+        String[] langs = {"fr", "de", "pt", "ru", "ja", "es", "he", "it", "fa", "tr", "da", "pl", "uk", "ko", "cs", "ceb", "sv", "nl"};
 
         for (String tmp : langs) {
             List pages = getSqlRecords("select p.page_title, group_concat(p3.page_title SEPARATOR '***') as cats\n"
@@ -127,18 +127,19 @@ public class noCats {
                 String title = page.toString().split(",,,,,,,")[0];
                 String[] cats = page.toString().split(",,,,,,,")[1].split("\\*\\*\\*");
                 String content = wiki.getPageText(title);
+                if (!content.contains("[[تصنيف:")) {
+                    for (String cat : cats) {
+                        System.out.println("********" + cat);
+                        cat = cat.replace("_", " ");
+                        addedCats = addedCats + "+ [[تصنيف:" + cat + "]] "; //ملخص التعديل
+                        content = content + "\n\n" + "[[تصنيف:" + cat + "]]\n"; //إضافة إلى نص المقالة
+                    }
 
-                for (String cat : cats) {
-                    System.out.println("********" + cat);
-                    cat = cat.replace("_", " ");
-                    addedCats = addedCats + "+ [[تصنيف:" + cat + "]] "; //ملخص التعديل
-                    content = content + "\n\n" + "[[تصنيف:" + cat + "]]\n"; //إضافة إلى نص المقالة
-                }
-
-                Tead t = new Tead(title, sortcats(content), "روبوت:إضافة تصنيفات معادلة (" + tmp + ") لمقالة غير مصنفة " + addedCats);
-                t.start();
-                while (t.isAlive()) {
-                    Thread.sleep(1000);
+                    Tead t = new Tead(title, sortcats(content), "روبوت:إضافة تصنيفات معادلة (" + tmp + ") لمقالة غير مصنفة " + addedCats);
+                    t.start();
+                    while (t.isAlive()) {
+                        Thread.sleep(1000);
+                    }
                 }
 
             }

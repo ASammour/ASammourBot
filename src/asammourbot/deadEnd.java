@@ -25,6 +25,7 @@ package asammourbot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -40,79 +41,43 @@ import org.wikipedia.Wiki;
  */
 public class deadEnd {
 
-    public static List<String> getBalancedSubstrings(String s, Character markStart,
-            Character markEnd, Boolean includeMarkers) {
-        List<String> subTreeList = new ArrayList<String>();
-        int level = 0;
-        int lastOpenDelimiter = -1;
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == markStart) {
-                level++;
-                if (level == 1) {
-                    lastOpenDelimiter = (includeMarkers ? i : i + 1);
-                }
-            } else if (c == markEnd) {
-                if (level == 1) {
-                    subTreeList.add(s.substring(lastOpenDelimiter, (includeMarkers ? i + 1 : i)));
-                }
-                if (level > 0) {
-                    level--;
-                }
-            }
-        }
-        return subTreeList;
-    }
+    static Wiki wiki = new Wiki("ar.wikipedia.org");
 
-    public static boolean isAllowed(String start, String end, String content) {
-        int x = 0;
-        Pattern p = Pattern.compile("\\" + start);
-        Matcher m = p.matcher(content);
-        while (m.find()) {
-            x++;
+    public static ArrayList getCatsTemplates(String title, String content) throws IOException {
+        ArrayList a = new ArrayList();
+
+        String[] templates = wiki.getTemplates(title, 10);
+        for (String tmp : templates) {
+            a.add(tmp);
+
         }
 
-        int y = 0;
-        p = Pattern.compile(end);
-        m = p.matcher(content);
-        while (m.find()) {
-            y++;
-        }
-        return x == y;
-    }
-
-    public static void sort(String[][] search) {
-        ArrayList results = new ArrayList();
-
-        for (String[] search1 : search) {
-            results.add(search1[0]);
+        String[] links = wiki.getLinksOnPage(title);
+        for (String tmp : links) {
+            a.add(tmp);
         }
 
-        Comparator c = new Comparator<String>() {
-            @Override
-            public int compare(String s1, String s2) {
-                return Integer.compare(s1.length(), s2.length());
-            }
-        };
+        String[] cats = wiki.getCategories(title, false, true);
+        for (String tmp : cats) {
+            a.add(tmp);
+        }
 
-        Collections.sort(results, c);
+        return a;
+
     }
 
     public static void main(String[] args) throws IOException, FailedLoginException, LoginException {
-        Wiki wiki = new Wiki("ar.wikipedia.org");
         wiki.login("ASammourBot", "crome801501101");
 
         String[] pages = wiki.getCategoryMembers("جميع مقالات النهاية المسدودة", false, 0);
-        
-        
-        for (String t : pages) {
 
+        for (String t : pages) {
             String content = wiki.getPageText(t);
+
             String links = "";
 
             ArrayList records = new ArrayList();
             String[][] search = wiki.search("morelike:" + t, 0);
-            sort(search);
 
             for (String[] search1 : search) {
                 if (content.contains(" " + search1[0] + " ")
@@ -122,14 +87,17 @@ public class deadEnd {
                         links = links + ": [[" + search1[0] + "]]";
                     }
 
-                    content = content.replace(" " + search1[0] + " ", " [[" + search1[0] + "]] ");
-                    content = content.replace(" ال" + search1[0] + " ", " [[ال" + search1[0] + "]] ");
+                    if (!getCatsTemplates(t, content).contains(search1[0])) {
+                        content = content.replace(" " + search1[0] + " ", " [[" + search1[0] + "]] ");
+                        content = content.replace(" ال" + search1[0] + " ", " [[ال" + search1[0] + "]] ");
+                        System.out.println("dsadsadasd");
+                    }
 
                 }
                 //wiki.edit(t, content, "روبوت:إضافة وصلات داخلية (" + links + ")", true, true, -2, null);
             }
-
             System.out.println(content);
+
 
         }
     }

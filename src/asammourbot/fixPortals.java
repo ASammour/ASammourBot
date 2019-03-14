@@ -42,7 +42,7 @@ public class fixPortals {
 
         ArrayList portalToNav = new ArrayList();
 
-        portalToNav.addAll(Arrays.asList(wiki.whatTranscludesHere("قالب:بوابة", 0)));
+        portalToNav.addAll(Arrays.asList(wiki.whatTranscludesHere("قالب:بوابة", 14)));
 
         portalToNav(portalToNav);
        
