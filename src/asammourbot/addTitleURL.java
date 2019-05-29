@@ -173,7 +173,9 @@ public class addTitleURL {
                 try {
                     Tead t = new Tead(title, content, "روبوت:إضافة عنوان لمرجع غير معنون (" + count + ")");
                     t.start();
-                    Thread.sleep(1000);
+                    while (t.isAlive()){
+                        Thread.sleep(1000);
+                    }
                 } catch (InterruptedException ex) {
                     Logger.getLogger(addTitleURL.class.getName()).log(Level.SEVERE, null, ex);
                 }

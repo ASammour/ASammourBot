@@ -43,7 +43,7 @@ public class main {
 
         if (param.equals("tagger")) {
             fixPortals.run();
-            addTitleURL.run();
+            //addTitleURL.run();
             tagger.run();
             moveToData.run();
             redirects.run();
