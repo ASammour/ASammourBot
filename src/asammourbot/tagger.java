@@ -74,7 +74,7 @@ public class tagger {
     public static String getDate() {
         SimpleDateFormat ar = new SimpleDateFormat("MMMM", new Locale("ar"));
         Date date = new Date();
-        return ar.format(date) + " "+Calendar.getInstance().get(Calendar.YEAR);
+        return ar.format(date) + " " + Calendar.getInstance().get(Calendar.YEAR);
     }
 
     public static String getDate2(Date d) {
@@ -83,7 +83,7 @@ public class tagger {
         Calendar c = Calendar.getInstance();
         c.setTime(d);
         Date current = c.getTime();
-        return ar.format(current) + " "+year.format(current);
+        return ar.format(current) + " " + year.format(current);
     }
 
     public static ArrayList getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {
@@ -278,6 +278,24 @@ public class tagger {
         return newList;
     }
 
+    public static ArrayList checkDevelopment(ArrayList pages) throws IOException {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -60);
+        System.out.println(calendar.getTime());
+        ArrayList newList = new ArrayList();
+        for (Object tmp : pages) {
+            Revision rev = wiki.getTopRevision(tmp.toString());
+            while (rev.isBot()) {
+                rev = rev.getPrevious();
+            }
+            if (rev.getTimestamp().before(calendar)) {
+                newList.add (tmp.toString());
+            }
+
+        }
+        return newList;
+    }
+
     public static ArrayList checkDis(ArrayList pages) throws IOException, InterruptedException {
         ArrayList newList = new ArrayList();
         for (Object tmp : pages) {
@@ -296,12 +314,33 @@ public class tagger {
         return newList;
     }
 
+    public static ArrayList getRemoveStub() throws IOException {
+        ArrayList pages = new ArrayList();
+        String[][] search = wiki.search("incategory:\"بذرة رياضيات\"", 0);
+        for (String[] search1 : search) {
+            if (Integer.parseInt(search1[1].toString()) > 500) {
+                if (wiki.isStub(search1[0]).split(" ").length > 500) {
+                    pages.add(search1[0]);
+                }
+            }
+        }
+
+        return pages;
+    }
+
     public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, FailedLoginException, LoginException, InterruptedException {
-        System.out.println(getDate());
+
+        ArrayList development = checkDevelopment(getRegexRecords("hastemplate:\"تطوير مقالة\""));
+        remove(development, "\\{\\{تطوير مقالة\\}\\}", "إزالة [[قالب:تطوير مقالة]] بعد مرور أكثر من شهرين على آخر تعديل");
+        remove(development, "\\{\\{تحت الإنشاء\\}\\}", "إزالة [[قالب:تطوير مقالة]] بعد مرور أكثر من شهرين على آخر تعديل");
+        remove(development, "\\{\\{المقالة قيد الإنشاء\\}\\}", "إزالة [[قالب:تطوير مقالة]]  بعد مرور أكثر من شهرين على آخر تعديل");
+        remove(development, "\\{\\{قيد التطوير\\}\\}", "إزالة [[قالب:تطوير مقالة]]  بعد مرور أكثر من شهرين على آخر تعديل");
+        remove(development, "\\{\\{تطوير مقال\\}\\}", "إزالة [[قالب:تطوير مقالة]]  بعد مرور أكثر من شهرين على آخر تعديل");
+
         ArrayList addSource = getRegexRecords("-insource:/\\<ref/ -incategory:\"صفحات بها مراجع ويكي بيانات\" -hastemplate:\"مصدر\" -hastemplate:\"مصدر وحيد\" -hastemplate:\"مصادر أكثر\" -incategory:\"مرجع من ويكي بيانات\" -hastemplate:\"سيرة شخصية غير موثقة\" -hastemplate:\"جرايز\" -incategory:\"بوابة تقويم/مقالات متعلقة\" -hastemplate:\"Sfn\" -incategory:\"صفحات توضيح\"");
         prepend(addSource, "{{مصدر|تاريخ=", "إضافة [[قالب:مصدر]]", false);
 
-        ArrayList removeSource = getRegexRecords("insource:/\\<ref/ hastemplate:\"مصدر\"");
+        ArrayList removeSource = getRegexRecords("insource:/\\<ref\\>.{5,}\\<\\/ref\\>/ hastemplate:\"مصدر\"");
         removeSource.addAll(getRegexRecords("incategory:\"صفحات بها مراجع ويكي بيانات\" hastemplate:\"مصدر\""));
         removeSource.addAll(getRegexRecords("incategory:\"مرجع من ويكي بيانات\" hastemplate:\"مصدر\""));
 
@@ -444,10 +483,8 @@ public class tagger {
                 + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
                 + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%commonswiki%\"\n"
                 + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%تصانيف_كومنز_متعددة%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%كومنز_مضمن%\")\n"
+                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%كومنز%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"روابط_شقيقة\")"
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =0 \n"
                 + "                                                   and page_is_redirect = 0\n"
@@ -567,7 +604,6 @@ public class tagger {
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%Wiktionary%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%ويكاموس%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"روابط_شقيقة\")\n"
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =0 \n"
                 + "                                                   and page_is_redirect = 0\n"
@@ -590,11 +626,9 @@ public class tagger {
                 + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
                 + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwikinews%\"\n"
                 + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%ويكي_الأخبار/سطر%\")\n"
                 + "												   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%وكخ%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%ويكي_الأخبار%\")\n"
+                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%أخبار%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"روابط_شقيقة\")\n"
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =0 \n"
                 + "                                                   and page_is_redirect = 0\n"
@@ -619,7 +653,6 @@ public class tagger {
                 + "                                                   ) \n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%اقتباس%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"روابط_شقيقة\")\n"
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =0 \n"
                 + "                                                   and page_is_redirect = 0\n"
@@ -644,7 +677,6 @@ public class tagger {
                 + "                                                   ) \n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%مصدر%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"روابط_شقيقة\")\n"
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =0 \n"
                 + "                                                   and page_is_redirect = 0\n"
@@ -669,7 +701,6 @@ public class tagger {
                 + "                                                   ) \n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%كتب%\")\n"
                 + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"روابط_شقيقة\")\n"
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =0 \n"
                 + "                                                   and page_is_redirect = 0\n"

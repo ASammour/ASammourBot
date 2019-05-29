@@ -140,9 +140,9 @@ public class oppositeCats {
                 + "and l1.ll_lang like \"en\"\n"
                 + "and el.ll_lang like \"ar\"\n"
                 + "group by p.page_title\n"
-                + "limit 1;");
+                + ";");
 
-        pages.addAll(getSqlRecords("select p.page_title, group_concat(el.ll_title SEPARATOR '***')\n"
+        pages.addAll(getSqlRecords("select concat(\"تصنيف:\",p.page_title) as page_title, group_concat(el.ll_title SEPARATOR '***') as \"cats\"\n"
                 + "from page p\n"
                 + "inner join langlinks l1\n"
                 + "on l1.ll_from = p.page_id\n"
@@ -173,7 +173,8 @@ public class oppositeCats {
                 + "and p3.page_is_redirect = 0\n"
                 + "and l1.ll_lang like \"en\"\n"
                 + "and el.ll_lang like \"ar\"\n"
-                + "group by el.ll_title;"));
+                + "and p.page_id not in (select cl_from from categorylinks  where cl_to = 'تصنيفات_مخفية')\n"
+                + "group by p.page_title;"));
 
         for (Object tmp : pages) {
             String title = tmp.toString().split(",,,,,,,")[0];
@@ -182,15 +183,14 @@ public class oppositeCats {
             for (String cat : cats) {
                 System.out.println("********" + cat);
                 cat = cat.replace("_", " ");
-                addedCats = addedCats + "+ [[تصنيف:" + cat + "]] "; //ملخص التعديل
-                content = content + "\n\n" + "[[تصنيف:" + cat + "]]\n"; //إضافة إلى نص المقالة
+                addedCats = addedCats + ("+ [[تصنيف:" + cat + "]] ").replace("[[تصنيف:تصنيف:", "[[تصنيف:"); //ملخص التعديل
+                content = content + "\n\n" + ("[[تصنيف:" + cat + "]]\n").replace("تصنيف:تصنيف:", "تصنيف:"); //إضافة إلى نص المقالة
             }
 
             Tead t = new Tead(title, sortcats(content), "روبوت التصانيف المعادلة (1.0): " + addedCats);
             t.start();
             Thread.sleep(1500);
             addedCats = "";
-
         }
     }
 }

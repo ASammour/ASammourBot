@@ -178,7 +178,7 @@ public class removeRedFiles {
     public static void run() throws IOException, ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
         System.out.println("dsadasda");
         Wiki wiki = new Wiki("ar.wikipedia.org");
-        List pages = getSqlRecords("SELECT CONCAT(page_title) AS page_title, CONCAT(il_to) AS il_to\n"
+        List pages = getSqlRecords("SELECT page_title, il_to\n"
                 + "FROM page\n"
                 + "JOIN imagelinks\n"
                 + "ON page_id = il_from\n"
@@ -192,25 +192,10 @@ public class removeRedFiles {
                 + "FROM commonswiki_p.page\n"
                 + "WHERE page_title = il_to\n"
                 + "AND page_namespace = 6))\n"
-                + "AND page_namespace = 0;");
-        
-        pages.addAll(getSqlRecords("SELECT CONCAT(\"قالب:\",page_title) AS page_title, CONCAT(il_to) AS il_to\n"
-                + "FROM page\n"
-                + "JOIN imagelinks\n"
-                + "ON page_id = il_from\n"
-                + "WHERE (NOT EXISTS(\n"
-                + "SELECT 1\n"
-                + "FROM image\n"
-                + "WHERE img_name = il_to))\n"
-                + "AND (NOT EXISTS(\n"
-                + "SELECT\n"
-                + "1\n"
-                + "FROM commonswiki_p.page\n"
-                + "WHERE page_title = il_to\n"
-                + "AND page_namespace = 6))\n"
-                + "AND page_namespace = 10;"));
+                + "AND page_namespace = 0\n"
+                + "AND il_to not in (select page_title from page where page_title = il_to and page_is_redirect = 1 and page_namespace = 6);");
 
-        pages.addAll(getSqlRecords("SELECT CONCAT(\"وحدة:\",page_title) AS page_title, CONCAT(il_to) AS il_to\n"
+        pages.addAll(getSqlRecords("SELECT concat(\"قالب:\",page_title) as page_title, il_to\n"
                 + "FROM page\n"
                 + "JOIN imagelinks\n"
                 + "ON page_id = il_from\n"
@@ -224,13 +209,20 @@ public class removeRedFiles {
                 + "FROM commonswiki_p.page\n"
                 + "WHERE page_title = il_to\n"
                 + "AND page_namespace = 6))\n"
-                + "AND page_namespace = 828;"));
-        
+                + "AND page_namespace = 10\n"
+                + "AND il_to not in (select page_title from page where page_title = il_to and page_is_redirect = 1 and page_namespace = 6);"));
+
         for (Object tmp : pages) {
             String title = tmp.toString().split(",,,,,,,")[0];
             String file = tmp.toString().split(",,,,,,,")[1];
 
             String content = wiki.getPageText(title);
+
+
+            if (!content.contains(file)) {
+                file = file.replace("_", " ");
+            }
+            
             if (!content.contains(file)) {
                 file = file.replace("_", " ");
             }
@@ -255,5 +247,6 @@ public class removeRedFiles {
         }
 
     }
+
 
 }

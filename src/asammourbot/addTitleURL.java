@@ -52,7 +52,7 @@ public class addTitleURL {
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, LoginException {
+    public static void run() throws IOException, InterruptedException, LoginException {
         checkNoTitle(getRegexRecords("insource:/\\<ref\\>\\[[^ ]{15,}\\]\\<\\/ref\\>/"));
 
     }

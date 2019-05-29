@@ -44,7 +44,7 @@ import org.wikipedia.Wiki;
  *
  * @author ASammour
  */
-public class specifyStub {
+public class specify {
 
     public static List getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {
 

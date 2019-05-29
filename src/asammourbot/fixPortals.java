@@ -37,12 +37,12 @@ import org.wikipedia.Wiki;
  */
 public class fixPortals {
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void run() throws IOException, InterruptedException {
         Wiki wiki = new Wiki("ar.wikipedia.org");
 
         ArrayList portalToNav = new ArrayList();
 
-        portalToNav.addAll(Arrays.asList(wiki.whatTranscludesHere("قالب:بوابة", 14)));
+        portalToNav.addAll(Arrays.asList(wiki.whatTranscludesHere("قالب:بوابة", 0)));
 
         portalToNav(portalToNav);
        

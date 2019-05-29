@@ -129,21 +129,23 @@ public class frPortals {
                     summary = summary + ": [[" + tmp1 + "]]";
                 }
             }
+            if (!summary.equals("")) {
 
-            if (content.contains("{{شريط بوابات")) {
-                content = content.replace("{{شريط بوابات|", "{{شريط بوابات" + portalsText + "|");
-            } else if (content.contains("{{شريط البوابات")) {
-                content = content.replace("{{شريط البوابات|", "{{شريط البوابات" + portalsText + "|");
-            } else {
-                if (content.contains("[[تصنيف:")) {
-                    content = content.replaceFirst("\\[\\[تصنيف\\:", "{{شريط بوابات" + portalsText + "}}\n\n[[تصنيف:");
+                if (content.contains("{{شريط بوابات")) {
+                    content = content.replace("{{شريط بوابات|", "{{شريط بوابات" + portalsText + "|");
+                } else if (content.contains("{{شريط البوابات")) {
+                    content = content.replace("{{شريط البوابات|", "{{شريط البوابات" + portalsText + "|");
                 } else {
-                    content = content + "\n\n" + "{{شريط بوابات" + portalsText + "}}";
+                    if (content.contains("[[تصنيف:")) {
+                        content = content.replaceFirst("\\[\\[تصنيف\\:", "{{شريط بوابات" + portalsText + "}}\n\n[[تصنيف:");
+                    } else {
+                        content = content + "\n\n" + "{{شريط بوابات" + portalsText + "}}";
+                    }
                 }
+                Tead t = new Tead(title, content, "روبوت: إضافة بوابات معادلة من المقابل الفرنسي " + summary);
+                t.start();
+                Thread.sleep(1000);
             }
-            Tead t = new Tead(title, content, "روبوت: إضافة بوابات معادلة من المقابل الفرنسي " + summary);
-            t.start();
-            Thread.sleep(1000);
         }
     }
 }

@@ -33,58 +33,49 @@ import javax.security.auth.login.LoginException;
  * @author ASammour
  */
 public class main {
- 
+
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, SQLException, IllegalAccessException, IOException, LoginException, FailedLoginException, InterruptedException {
-        String param = args[0];  
-        
-        if (param.equals("tagger")){
+        String param = args[0];
+
+        if (param.equals("quarry")) {
+            quarry.run();
+        }
+
+        if (param.equals("tagger")) {
+            fixPortals.run();
+            addTitleURL.run();
             tagger.run();
-        }
-        
-        if (param.equals("file")){
-            removeRedFiles.run();
-        }
-        
-        if (param.equals("redcat")){
-            redCats.run();
-        }
-        
-        if (param.equals("oppositecats")){
-            oppositeCats.run();
-        }
-        
-        if (param.equals("specify")){
-            specifyStub.run();
-        }
-        
-        if (param.equals("arab")){
-            arabization.run();
-        }
-        
-        if (param.equals("frportals")){
-            frPortals.run();
-        }
-        
-        if (param.equals("nocats")){
-            noCats.run();
-        }
-        
-        if (param.equals("redirects")){
+            moveToData.run();
             redirects.run();
         }
-        
-        if (param.equals("stubToPortal")){
+
+        if (param.equals("red")) {
+            removeRedFiles.run();
+            redCats.run();
+            redPortals.run();
+        }
+
+        if (param.equals("cat")) {
+            oppositeCats.run();
+            addCats.run();
+            noCats.run();
+            cat.run();
+        }
+
+        if (param.equals("specify")) {
+            specify.run();
+            portalToStub.run();
             stubToPortal.run();
         }
-        
-        if (param.equals("addcats")){
-            addCats.run();
+
+        if (param.equals("arab")) {
+            arabization.run();
         }
-        
-        if (param.equals("portaltostub")){
-            portalToStub.run();
+
+        if (param.equals("portals")) {
+            frPortals.run();
+            enPortals.run();
         }
-        
-        
+
     }
 }

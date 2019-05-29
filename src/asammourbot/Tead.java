@@ -41,11 +41,11 @@ import org.wikipedia.Wiki;
 public class Tead extends Thread {
 
     Wiki wiki = new Wiki("ar.wikipedia.org");
-    
-    
+
     @Override
     public void run() {
         ArrayList cred = new ArrayList();
+
         try {
             BufferedReader br;
             try {
@@ -71,14 +71,17 @@ public class Tead extends Thread {
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.HOUR, -12);
             Wiki.Revision firstRev = wiki.getFirstRevision(page);
-            if (firstRev.getTimestamp().before(calendar)) {
+            if (firstRev.getTimestamp().before(calendar) 
+                    && !content.contains("</pages>")
+                    && wiki.getPageInfo(page).get("exists").equals(true)
+                    && wiki.getPageInfo(page).get("protection").toString().equals("{cascade=false}")) {
                 wiki.login(cred.get(0).toString(), cred.get(1).toString());
                 wiki.edit(page, content.replaceAll("(\r?\n){3,}", "\n\n"), summary, true, true, -2, null);
             }
         } catch (IOException | LoginException ex) {
             Logger.getLogger(Tead.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
     }
 
     String page;

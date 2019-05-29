@@ -32,7 +32,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import org.wikipedia.Wiki;
 
@@ -40,7 +43,7 @@ import org.wikipedia.Wiki;
  *
  * @author ASammour
  */
-public class portalToStub {
+public class redPortals {
 
     public static List getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {
 
@@ -67,49 +70,46 @@ public class portalToStub {
         // iterate through the java resultset
         while (rs.next()) {
             String firstName = rs.getString("page_title");
-            String file = rs.getString("stub");
+            String file = rs.getString("portals");
 
             records.add(firstName + ",,,,,,," + file);
         }
         return records;
     }
 
-    public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
+    public static void run() throws IOException, ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
+
         Wiki wiki = new Wiki("ar.wikipedia.org");
 
-        List pages = getSqlRecords("SELECT page_title,\n"
-                + "\n"
-                + "  (SELECT replace(replace(cl_to, \"بوابة_\", \"\"), \"/مقالات_متعلقة\", \"\")\n"
-                + "   FROM categorylinks\n"
-                + "   WHERE cl_from = page_id\n"
-                + "     AND cl_to LIKE\"%/مقالات_متعلقة\"\n"
-                + "   LIMIT 1) AS \"stub\"\n"
-                + "FROM page\n"
-                + "INNER JOIN categorylinks cl1 ON cl1.cl_from = page_id\n"
-                + "WHERE cl1.cl_to = \"مقالات_بذور_عامة\"\n"
-                + "  AND\n"
-                + "    (SELECT concat(\"بذرة_\", replace(replace(cl_to, \"بوابة_\", \"\"), \"/مقالات_متعلقة\", \"\"))\n"
-                + "     FROM categorylinks\n"
-                + "     WHERE cl_from = page_id\n"
-                + "       AND cl_to LIKE\"%/مقالات_متعلقة\"\n"
-                + "     LIMIT 1) IN\n"
-                + "    (SELECT page_title\n"
-                + "     FROM page\n"
-                + "     WHERE page_namespace = 10\n"
-                + "     );");
+        List pages = getSqlRecords("select page_title, group_concat(cl_to) as \"portals\"\n"
+                + "from categorylinks \n"
+                + "inner join page\n"
+                + "on page_id = cl_from\n"
+                + "where cl_to like \"بوابة%/مقالات_متعلقة\"\n"
+                + "and cl_to not in (select page_title from page where page_is_redirect = 0 and page_namespace = 14)\n"
+                + "and page_namespace = 0\n"
+                + "and page_is_redirect = 0\n"
+                + "group by page_title;");
 
         for (Object tmp : pages) {
+            String portalsText = "";
             String title = tmp.toString().split(",,,,,,,")[0];
-            String stub = tmp.toString().split(",,,,,,,")[1];
+            String[] portals = tmp.toString().split(",,,,,,,")[1].split(",");
             String content = wiki.getPageText(title);
-            content = content.replace("{{بذرة}}", "{{بذرة " + stub.replace("_", " ") + "}}");
-
-            Tead t = new Tead(title, content, "روبوت:تخصيص البذرة {{بذرة " + stub + "}}");
-            t.start();
-            while (t.isAlive()) {
-                Thread.sleep(1000);
+            for (String tmp1 : portals) {
+                String portal = tmp1.replace("/مقالات_متعلقة", "")
+                        .replace("بوابة_", "")
+                        .replace("_", " ");
+                content = content.replace("|" + portal + "|", "|");
+                content = content.replace("|" + portal + "}}", "}}");
+                content = content.replace("{{شريط بوابات}}", "");
+                portalsText = portalsText + " :[[" + tmp1.replace("/مقالات_متعلقة", "") + "]]";
             }
-
+            Tead t = new Tead(title, content, "روبوت:إزالة بوابات غير موجودة" + portalsText);
+            t.start();
+            Thread.sleep(1000);
+            
         }
+
     }
 }

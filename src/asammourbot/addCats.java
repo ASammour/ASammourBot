@@ -44,6 +44,17 @@ import org.wikipedia.Wiki;
  *
  * @author ASammour
  */
+
+
+/**
+ * تقوم هذه المهمة بإضافة تصنيف للمقالة التي لها نفس العنوان
+ * مثال
+ * مقالة تاريخ مصر
+ * يضيف لها 
+ * تصنيف:تاريخ مصر
+ * وهكذا
+ * @author ASammour
+ */
 public class addCats {
 
     public static ArrayList getSqlRecords(String query) throws ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, IOException {

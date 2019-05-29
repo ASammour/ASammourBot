@@ -24,7 +24,10 @@
 package asammourbot;
 
 import static asammourbot.tagger.wiki;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import static java.lang.System.out;
 import java.util.ArrayList;
 import javax.security.auth.login.LoginException;
 import org.wikipedia.Wiki;
@@ -47,27 +50,30 @@ public class moveToData {
         return records;
     }
 
-    public static void main(String[] args) throws IOException, LoginException, InterruptedException {
-        String[] langs = {"fa","en", "fr", "de", "pt", "ru", "ja", "es", "he", "it", "tr", "da", "pl", "uk", "ko", "cs", "ceb", "sv", "nl"};
+    public static void run() throws IOException, LoginException, InterruptedException {
+        int[] namespaces = {0, 14};
+        String[] langs = {"fa", "en", "fr", "de", "pt", "ru", "ja", "es", "he", "it", "tr", "da", "pl", "uk", "ko", "cs", "ceb", "sv", "nl", "ur"};
+        for (int namespace : namespaces) {
+            for (String tmp : langs) {
+                ArrayList pages = getRegexRecords("insource:/\\[\\[" + tmp + ":/", namespace);
+                for (Object page : pages) {
+                    String wikibase = wiki.getData(page.toString());
 
-        for (String tmp : langs) {
-            ArrayList pages = getRegexRecords("insource:/\\[\\[" + tmp + ":/", 0);
-            for (Object page : pages) {
-                String wikibase = wiki.getData(page.toString());
+                    String opposite = (wiki.getOpposite(wikibase, tmp));
 
-                String opposite = (wiki.getOpposite(wikibase, tmp));
-                System.out.println(opposite);
-                if (!opposite.trim().equals("")) {
-                    String content = wiki.getPageText(page.toString());
-                    content = content.replaceAll("\\[\\[" + tmp+".{1,}\\]\\]", "");
-                    System.out.println(content);
-                    Tead t = new Tead (page.toString(), content, "روبوت:إزالة وصلة لغات قديمة ("+"[[" + tmp + ":" + opposite + "]])");
-                    t.start();
-                    while (t.isAlive()){
-                        Thread.sleep(100);
+                    if (!opposite.trim().equals("")) {
+                        String content = wiki.getPageText(page.toString());
+                        content = content.replaceAll("\\[\\[" + tmp + ".{1,}\\]\\]", "");
+                        System.out.println(content);
+                        Tead t = new Tead(page.toString(), content, "روبوت:إزالة وصلة لغات قديمة (" + "[[" + tmp + ":" + opposite + "]])");
+                        t.start();
+                        while (t.isAlive()) {
+                            Thread.sleep(100);
+                        }
                     }
                 }
             }
         }
+
     }
 }

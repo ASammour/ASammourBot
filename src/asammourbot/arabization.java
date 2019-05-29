@@ -98,20 +98,23 @@ public class arabization {
                 + ";");
 
         for (Object tmp : pages) {
-            String title = tmp.toString().split(",,,,,,,")[0];
-            String from = tmp.toString().split(",,,,,,,")[1];
-            String to = tmp.toString().split(",,,,,,,")[2];
+            if (tmp.toString().split(",,,,,,,").length == 3) {
 
-            String content = wiki.getPageText(title);
-            if (content.contains("[[" + from) || content.contains("[[" + from.replace("_", " "))) {
+                String title = tmp.toString().split(",,,,,,,")[0];
+                String from = tmp.toString().split(",,,,,,,")[1];
+                String to = tmp.toString().split(",,,,,,,")[2];
 
-                content = content.replace("[[" + from, "[[" + to);
-                content = content.replace("[[" + from.replace("_", " "), "[[" + to);
-                
-                Tead t = new Tead(title, content, "روبوت:تعريب (" + from + "->[[" + to + "]])");
-                t.start();
-                while (t.isAlive()) {
-                    Thread.sleep(1000);
+                String content = wiki.getPageText(title);
+                if (content.contains("[[" + from) || content.contains("[[" + from.replace("_", " "))) {
+
+                    content = content.replace("[[" + from+"]]", "[[" + to+"]]");
+                    content = content.replace("[[" + from.replace("_", " ")+"]]", "[[" + to+"]]");
+
+                    Tead t = new Tead(title, content, "روبوت:تعريب (" + from + "->[[" + to + "]])");
+                    t.start();
+                    while (t.isAlive()) {
+                        Thread.sleep(1000);
+                    }
                 }
             }
         }
