@@ -173,7 +173,7 @@ public class cat {
                 + "and p3.page_is_redirect = 0\n"
                 + "and replace(replace(ll2.ll_title,\" \",\"_\"),\"بوابة:\",\"\") not in (select pl_title from pagelinks where pl_title = replace(replace(ll2.ll_title,\" \",\"_\"),\"بوابة:\",\"\")\n"
                 + "                                         and pl_from = p1.page_id)\n"
-                + "group by p1.page_title limit 100;");
+                + "group by p1.page_title;");
 
         for (Object tmp : port) {
             String portalsText = "";
@@ -224,7 +224,7 @@ public class cat {
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%تصنيفات_مخفية%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =14 \n"
                 + "                                                   and page_is_redirect = 0\n"
-                + "                                                   limit 10;");
+                + "                                                   ;");
 
         insertSister(wiktionary, "قالب:ويكاموس", "wb-otherproject-wiktionary", "https://ar.wiktionary.org/wiki/", "wiktionary");
 
@@ -236,7 +236,7 @@ public class cat {
                 + "and p1.page_namespace = 0\n"
                 + "and p1.page_is_redirect = 0\n"
                 + "and p.page_id not in (select pl_from from pagelinks where pl_from_namespace = 14 and pl_namespace = 0)\n"
-                + "and p.page_id not in (select cl_from from categorylinks where cl_from = p.page_id and cl_to = \"تحويلات_تصنيفات_ويكيبيديا\") limit 10;");
+                + "and p.page_id not in (select cl_from from categorylinks where cl_from = p.page_id and cl_to = \"تحويلات_تصنيفات_ويكيبيديا\");");
 
         for (Object tmp : pages) {
             tmp = "تصنيف:" + tmp;
@@ -270,7 +270,7 @@ public class cat {
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%تصنيفات_مخفية%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =14 \n"
                 + "                                                   and page_is_redirect = 0\n"
-                + "                                                   limit 10;");
+                + "                                                   ;");
 
         insertSister(wikibooks, "قالب:ويكي الكتب", "wb-otherproject-wikibooks", "https://ar.wikibooks.org/wiki/", "wikibooks");
 
@@ -296,7 +296,7 @@ public class cat {
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%تصنيفات_مخفية%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =14 \n"
                 + "                                                   and page_is_redirect = 0\n"
-                + "limit 10;");
+                + ";");
         insertSister(commons, "قالب:كومنز", "wb-otherproject-commons", "https://commons.wikimedia.org/wiki/", "commons");
 
         ArrayList wikinews = getSqlRecords("select page_title from  \n"
@@ -320,7 +320,7 @@ public class cat {
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%تصنيفات_مخفية%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =14 \n"
                 + "                                                   and page_is_redirect = 0\n"
-                + "                                                   limit 10;");
+                + "                                                   ;");
 
         insertSister(wikinews, "قالب:ويكي الأخبار", "wb-otherproject-wikinews", "https://ar.wikinews.org/wiki/", "wikinews");
 
@@ -345,7 +345,7 @@ public class cat {
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%تصنيفات_مخفية%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =14 \n"
                 + "                                                   and page_is_redirect = 0\n"
-                + "                                                   limit 10;");
+                + "                                                   ;");
 
         insertSister(wikiquote, "قالب:ويكي الاقتباس", "wb-otherproject-wikiquote", "https://ar.wikiquote.org/wiki/", "wikiquote");
 
@@ -370,7 +370,7 @@ public class cat {
                 + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%تصنيفات_مخفية%\" and cl_from = page_id)\n"
                 + "                                                   and page_namespace =14 \n"
                 + "                                                   and page_is_redirect = 0\n"
-                + "                                                   limit 10;");
+                + "                                                   ;");
 
         insertSister(wikisource, "قالب:ويكي مصدر", "wb-otherproject-wikisource", "https://ar.wikisource.org/wiki/", "wikisource");
 
