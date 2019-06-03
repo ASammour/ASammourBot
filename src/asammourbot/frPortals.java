@@ -124,7 +124,7 @@ public class frPortals {
             String content = wiki.getPageText(title);
 
             for (String tmp1 : portals) {
-                if (!tmp1.contains("مثلية") && !tmp1.contains("إرهاب") && !content.contains("|" + tmp1.replace("بوابة:", "")) && !content.contains("لا لربط البوابات")) {
+                if (!tmp1.contains("مثلية") && !tmp1.contains("الميم") && !tmp1.contains("إرهاب") && !content.contains("|" + tmp1.replace("بوابة:", "")) && !content.contains("لا لربط البوابات")) {
                     portalsText = portalsText + "|" + tmp1.replace("بوابة:", "");
                     summary = summary + ": [[" + tmp1 + "]]";
                 }
