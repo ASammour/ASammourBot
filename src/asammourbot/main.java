@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
+import org.wikipedia.Wiki;
 
 /**
  *
@@ -41,41 +42,105 @@ public class main {
             quarry.run();
         }
 
+        if (param.equals("orphan")) {
+            orphan.run();
+        }
+        
+        if (param.equals("nocats")) {
+            noCats.run();
+        }
+        
+        if (param.equals("addcats")) {
+            addCats.run();
+        }
+        
         if (param.equals("tagger")) {
-            fixPortals.run();
             //addTitleURL.run();
-            tagger.run();
             moveToData.run();
             redirects.run();
+            fixPortals.run();
+            tagger.run();
+            
         }
 
-        if (param.equals("red")) {
-            removeRedFiles.run();
+        if (param.equals("redcat")) {
             redCats.run();
+        }
+        
+        
+        if (param.equals("redportal")) {
             redPortals.run();
         }
 
+        if (param.equals("redfile")) {
+            removeRedFiles.run();
+        }
+
+        if (param.equals("catarticle")) {
+            catarticle.run();
+        }
+        
+        if (param.equals("catcat")) {
+            catcat.run();
+            //addCats.run();
+            //noCats.run();
+            //cat.run();
+        }
+        
         if (param.equals("cat")) {
-            oppositeCats.run();
-            addCats.run();
-            noCats.run();
             cat.run();
+        }
+        
+        if (param.equals("sisterarticle")) {
+            sisterarticle.run();
+        }
+        
+        if (param.equals("sistercat")) {
+            sistercat.run();
         }
 
         if (param.equals("specify")) {
             specify.run();
-            portalToStub.run();
+        }
+
+        if (param.equals("stubtoportal")) {
             stubToPortal.run();
         }
 
-        if (param.equals("arab")) {
-            arabization.run();
+        if (param.equals("portaltostub")) {
+            portalToStub.run();
         }
 
-        if (param.equals("portals")) {
+        if (param.equals("arabtemplate")) {
+            arabtemplate.run();
+        }
+
+        if (param.equals("arabarticle")) {
+            arabarticle.run();
+        }
+        
+        if (param.equals("frportals")) {
             frPortals.run();
+        }
+        
+        if (param.equals("enportals")) {
             enPortals.run();
         }
 
+        if (param.equals("url")) {
+            addTitleURL.run();
+        }
+        
+        if (param.equals("redirectcat")) {
+            redirectCat.run();
+        }
+        
+        if (param.equals("nocats")) {
+            noCats.run();
+        }
+        
+        if (param.equals("addcats")) {
+            addCats.run();
+        }
     }
 }

@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.wikipedia.Wiki;
 
 /*
@@ -104,6 +106,8 @@ public class enPortals {
                 + "and p4.page_namespace = 100\n"
                 + "and ll2.ll_lang = \"ar\"\n"
                 + "and p1.page_id not in (select cl_from from categorylinks where cl_to = \"صفحات_توضيح\")\n"
+                + "and ll2.ll_title not like \"%/%\"\n"
+                + "and p1.page_id in (select cl_from from categorylinks where cl_from = p1.page_id and cl_to = \"مقالات_بحاجة_لشريط_بوابات\")\n"
                 + "and p1.page_id not in (select cl_from from categorylinks where cl_to = concat(\"بوابة_\",replace(replace(ll2.ll_title,\"بوابة:\",\"\"),\" \",\"_\"),\"/مقالات_متعلقة\"))\n"
                 + "group by p1.page_title;");
 
@@ -115,7 +119,7 @@ public class enPortals {
             String content = wiki.getPageText(title);
 
             for (String tmp1 : portals) {
-                if (!tmp1.contains("مثلية") && !tmp1.contains("الميم") && !tmp1.contains("إرهاب") && !content.contains("|" + tmp1.replace("بوابة:", "")) && !content.contains("لا لربط البوابات")) {
+                if (!tmp1.contains("مثلية") && !tmp1.contains("الميم") && !tmp1.contains("إرهاب") && !getPortal(content).contains("|" + tmp1.replace("بوابة:", "")) && !content.contains("لا لربط البوابات")) {
                     portalsText = portalsText + "|" + tmp1.replace("بوابة:", "");
                     summary = summary + ": [[" + tmp1 + "]]";
                 }
@@ -138,5 +142,17 @@ public class enPortals {
                 Thread.sleep(1000);
             }
         }
+    }
+
+    public static String getPortal(String content) {
+        String portal = "";
+        Pattern pattern = Pattern.compile("\\{\\{شريط بوابات.*\\}\\}", Pattern.CASE_INSENSITIVE);
+        Matcher urlMatcher = pattern.matcher(content);
+
+        while (urlMatcher.find()) {
+            portal = urlMatcher.group();
+            break;
+        }
+        return portal;
     }
 }

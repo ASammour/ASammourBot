@@ -67,7 +67,7 @@ public class tagger {
 
     static Wiki wiki = new Wiki("ar.wikipedia.org");
 
-    static String mainsummary = "[[ويكيبيديا:مشروع ويكي الصيانة|روبوت الصيانة (1.1):]] ";
+    static String mainsummary = "روبوت: ";
 
     static Set pages = new HashSet();
 
@@ -192,18 +192,6 @@ public class tagger {
         }
     }
 
-    public static void insertSister(ArrayList pages, String summary, String className, String url, String project) throws IOException, LoginException, InterruptedException {
-        for (Object tmp : pages) {
-            ArrayList newList = new ArrayList();
-
-            String sister = getSister(tmp.toString(), className, url, project);
-            if (!sister.equals("")) {
-                newList.add(tmp.toString());
-            }
-
-            append(newList, sister, "إضافة [[ويكيبيديا:مشاريع شقيقة|" + summary + "]]", false);
-        }
-    }
 
     public static String getSister(String title, String className, String url, String project) throws IOException {
         String finalText = "";
@@ -289,7 +277,7 @@ public class tagger {
                 rev = rev.getPrevious();
             }
             if (rev.getTimestamp().before(calendar)) {
-                newList.add (tmp.toString());
+                newList.add(tmp.toString());
             }
 
         }
@@ -314,20 +302,6 @@ public class tagger {
         return newList;
     }
 
-    public static ArrayList getRemoveStub() throws IOException {
-        ArrayList pages = new ArrayList();
-        String[][] search = wiki.search("incategory:\"بذرة رياضيات\"", 0);
-        for (String[] search1 : search) {
-            if (Integer.parseInt(search1[1].toString()) > 500) {
-                if (wiki.isStub(search1[0]).split(" ").length > 500) {
-                    pages.add(search1[0]);
-                }
-            }
-        }
-
-        return pages;
-    }
-
     public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, FailedLoginException, LoginException, InterruptedException {
 
         ArrayList development = checkDevelopment(getRegexRecords("hastemplate:\"تطوير مقالة\""));
@@ -346,7 +320,7 @@ public class tagger {
 
         remove(removeSource, "\\{\\{مصدر\\|.{1,}\\}\\}\n", "إزالة [[قالب:مصدر]]");
 
-        ArrayList deadButAlive = getRegexRecords("incategory:\"أشخاص على قيد الحياة\" incategory:\"وفيات 2018\"");
+        ArrayList deadButAlive = getRegexRecords("incategory:\"أشخاص على قيد الحياة\" incategory:\"وفيات 2019\"");
         remove(deadButAlive, "\\[\\[تصنيف:أشخاص على قيد الحياة\\]\\]\n", "إزالة [[تصنيف:أشخاص على قيد الحياة]] من شخصيات متوفاة");
 
         ArrayList editing = checkEditing(getRegexRecords("hastemplate:\"تحرر\""));
@@ -467,246 +441,6 @@ public class tagger {
                 + "and page_len < 1500;");
         append(addStub, "{{بذرة", "إضافة [[قالب:بذرة]]", false);
 
-        ArrayList commons = getSqlRecords("select page_title from  \n"
-                + "page\n"
-                + "inner join page_props\n"
-                + "on pp_page = page_id\n"
-                + "where page_id not in (select arwiki_p.categorylinks.cl_from from arwiki_p.categorylinks where arwiki_p.categorylinks.cl_from = arwiki_p.page.page_id and arwiki_p.categorylinks.cl_to like \"%كومنز%\")\n"
-                + "and pp_propname like \"%wikibase_item%\"\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiki%\"\n"
-                + "                                                   )\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%commonswiki%\"\n"
-                + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%كومنز%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "                                                   and page_namespace =0 \n"
-                + "                                                   and page_is_redirect = 0\n"
-                + "                                                   ;");
-
-        insertSister(commons, "قالب:كومنز", "wb-otherproject-commons", "https://commons.wikimedia.org/wiki/", "commons");
-
-        ArrayList addOrphan = getSqlRecords("SELECT page_title,(select count(distinct pl_from) \n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title in (\n"
-                + "                       select page_title from redirect inner join page on rd_from = page_id where page_namespace = 0 and rd_title = p.page_title\n"
-                + "                and rd_namespace = 0)\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                and pl_from not in (select (pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0))\n"
-                + "               and pl_from <> page_id   \n"
-                + "               )\n"
-                + "				+\n"
-                + "				(select count(distinct pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                 and pl_from <> page_id \n"
-                + "               )\n"
-                + "               as counts\n"
-                + "FROM page p\n"
-                + "where page_namespace = 0\n"
-                + "and page_is_redirect = 0\n"
-                + "and page_id  not in (select cl_from from categorylinks where cl_to like \"%جميع_المقالات_اليتيمة%\" and cl_from = page_id)\n"
-                + "and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "having counts < 3;");
-
-        prepend(addOrphan, "{{يتيمة|تاريخ=", "إضافة [[قالب:يتيمة]]", false);
-
-        ArrayList removeOrphan = getSqlRecords("SELECT page_title,(select count(distinct pl_from) \n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title in (\n"
-                + "                       select page_title from redirect inner join page on rd_from = page_id where page_namespace = 0 and rd_title = p.page_title\n"
-                + "                and rd_namespace = 0)\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                and pl_from not in (select (pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0))\n"
-                + "               and pl_from <> page_id   \n"
-                + "               )\n"
-                + "				+\n"
-                + "				(select count(distinct pl_from)\n"
-                + "                from pagelinks \n"
-                + "                where pl_from_namespace = 0 \n"
-                + "                and pl_title = page_title\n"
-                + "                and pl_namespace = 0\n"
-                + "                and pl_from in (select page_id\n"
-                + "                                from page\n"
-                + "                                where page_id = pl_from\n"
-                + "                                and page_namespace = 0\n"
-                + "                                and page_is_redirect = 0)\n"
-                + "                 and pl_from <> page_id \n"
-                + "               )\n"
-                + "               as counts\n"
-                + "FROM page p\n"
-                + "where page_namespace = 0\n"
-                + "and page_is_redirect = 0\n"
-                + "and page_id  in (select cl_from from categorylinks where cl_to like \"%جميع_المقالات_اليتيمة%\" and cl_from = page_id)\n"
-                + "and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "having counts >= 3;");
-
-        remove(removeOrphan, "\\{\\{يتيمة\\|.{2,20}\\}\\}\n", "إزالة [[قالب:يتيمة]]");
-
-        ArrayList wiktionary = getSqlRecords("select (page_title) from  \n"
-                + "page\n"
-                + "inner join page_props\n"
-                + "on pp_page = page_id\n"
-                + "where pp_propname like \"%wikibase_item%\"\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiki%\"\n"
-                + "                                                   )\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiktionary%\"\n"
-                + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%Wiktionary%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%ويكاموس%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "                                                   and page_namespace =0 \n"
-                + "                                                   and page_is_redirect = 0\n"
-                + "                                                   ;");
-
-        insertSister(wiktionary, "قالب:ويكاموس", "wb-otherproject-wiktionary", "https://ar.wiktionary.org/wiki/", "wiktionary");
-
-        ArrayList wikinews = getSqlRecords("select (page_title) from  \n"
-                + "page\n"
-                + "inner join page_props\n"
-                + "on pp_page = page_id\n"
-                + "where pp_propname like \"%wikibase_item%\"\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiki%\"\n"
-                + "                                                   )\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwikinews%\"\n"
-                + "                                                   ) \n"
-                + "												   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%وكخ%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%أخبار%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "                                                   and page_namespace =0 \n"
-                + "                                                   and page_is_redirect = 0\n"
-                + "                                                   ;");
-
-        insertSister(wikinews, "قالب:ويكي الأخبار", "wb-otherproject-wikinews", "https://ar.wikinews.org/wiki/", "wikinews");
-
-        ArrayList wikiquote = getSqlRecords("select (page_title) from  \n"
-                + "page\n"
-                + "inner join page_props\n"
-                + "on pp_page = page_id\n"
-                + "where pp_propname like \"%wikibase_item%\"\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiki%\"\n"
-                + "                                                   )\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwikiquote%\"\n"
-                + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%اقتباس%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "                                                   and page_namespace =0 \n"
-                + "                                                   and page_is_redirect = 0\n"
-                + "                                                   ;");
-
-        insertSister(wikiquote, "قالب:ويكي الاقتباس", "wb-otherproject-wikiquote", "https://ar.wikiquote.org/wiki/", "wikiquote");
-
-        ArrayList wikisource = getSqlRecords("select (page_title) from  \n"
-                + "page\n"
-                + "inner join page_props\n"
-                + "on pp_page = page_id\n"
-                + "where pp_propname like \"%wikibase_item%\"\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiki%\"\n"
-                + "                                                   )\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwikisource%\"\n"
-                + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%مصدر%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "                                                   and page_namespace =0 \n"
-                + "                                                   and page_is_redirect = 0\n"
-                + "                                                   ;");
-
-        insertSister(wikisource, "قالب:ويكي مصدر", "wb-otherproject-wikisource", "https://ar.wikisource.org/wiki/", "wikisource");
-
-        ArrayList wikibooks = getSqlRecords("select (page_title) from  \n"
-                + "page\n"
-                + "inner join page_props\n"
-                + "on pp_page = page_id\n"
-                + "where pp_propname like \"%wikibase_item%\"\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwiki%\"\n"
-                + "                                                   )\n"
-                + "and TRIM(LEADING 'Q' FROM pp_value) in (select wikidatawiki_p.wb_items_per_site.ips_item_id\n"
-                + "                                                   from wikidatawiki_p.wb_items_per_site\n"
-                + "                                                   where wikidatawiki_p.wb_items_per_site.ips_item_id = TRIM(LEADING 'Q' FROM pp_value)\n"
-                + "                                                   and wikidatawiki_p.wb_items_per_site.ips_site_id like \"%arwikibooks%\"\n"
-                + "                                                   ) \n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"%كتب%\")\n"
-                + "                                                   and page_id not in (select tl_from from templatelinks where tl_from = page_id and tl_from_namespace = 0 and tl_title like \"شقيق\")\n"
-                + "                                                   and page_id not in (select cl_from from categorylinks where cl_to like \"%صفحات_توضيح%\" and cl_from = page_id)\n"
-                + "                                                   and page_namespace =0 \n"
-                + "                                                   and page_is_redirect = 0\n"
-                + "                                                   ;");
-
-        insertSister(wikibooks, "قالب:ويكي الكتب", "wb-otherproject-wikibooks", "https://ar.wikibooks.org/wiki/", "wikibooks");
 
     }
 }

@@ -102,7 +102,13 @@ public class portalToStub {
             String title = tmp.toString().split(",,,,,,,")[0];
             String stub = tmp.toString().split(",,,,,,,")[1];
             String content = wiki.getPageText(title);
+
             content = content.replace("{{بذرة}}", "{{بذرة " + stub.replace("_", " ") + "}}");
+            content = content.replace("{{ بذرة }}", "{{بذرة " + stub.replace("_", " ") + "}}");
+            content = content.replace("{{بذرة }}", "{{بذرة " + stub.replace("_", " ") + "}}");
+            content = content.replace("{{ بذرة}}", "{{بذرة " + stub.replace("_", " ") + "}}");
+            content = content.replace("{{بذرة|}}", "{{بذرة " + stub.replace("_", " ") + "}}");
+            content = content.replace("{{بذرة| }}", "{{بذرة " + stub.replace("_", " ") + "}}");
 
             Tead t = new Tead(title, content, "روبوت:تخصيص البذرة {{بذرة " + stub + "}}");
             t.start();

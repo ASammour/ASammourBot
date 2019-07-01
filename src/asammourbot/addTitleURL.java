@@ -48,7 +48,9 @@ public class addTitleURL {
             org.jsoup.nodes.Document document = null;
             Tead1 t = new Tead1(document, tmp.toString());
             t.start();
-            Thread.sleep(700);
+            while (t.isAlive()){
+                Thread.sleep(700);
+            }   
         }
     }
 
@@ -149,7 +151,7 @@ public class addTitleURL {
                 try {
                     document = Jsoup.connect(withoutRef).followRedirects(false).get();
                 } catch (Exception e) {
-
+                    continue;
                 }
                 if (document != null) {
                     if (!document.title().toLowerCase().contains("move")
@@ -162,7 +164,9 @@ public class addTitleURL {
                             && !document.title().toLowerCase().contains("sorry")
                             && !document.title().toLowerCase().contains("found")
                             && !document.title().toLowerCase().contains("404")
-                            && !document.title().trim().equals("")) {
+                            && !document.title().trim().equals("")
+                            && !document.title().trim().contains("[")
+                            && !document.title().trim().contains("]")) {
                         content = content.replace("<ref>[" + withoutRef + "]</ref>", "<ref>[" + withoutRef + " " + document.title() + "]</ref>");
                         content = decodeUrl(content);
                         count = count + 1;

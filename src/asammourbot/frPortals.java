@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.wikipedia.Wiki;
 
 /*
@@ -77,6 +79,20 @@ public class frPortals {
         return records;
     }
 
+    
+    public static String getPortal(String content) {
+        String portal = "";
+        Pattern pattern = Pattern.compile("\\{\\{شريط بوابات.*\\}\\}", Pattern.CASE_INSENSITIVE);
+        Matcher urlMatcher = pattern.matcher(content);
+
+        while (urlMatcher.find()) {
+            portal = urlMatcher.group();
+            break;
+        }
+        return portal;
+    }
+    
+    
     public static void run() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
         List pages = getSqlRecords("SELECT p.page_title,\n"
                 + "       group_concat(el.ll_title SEPARATOR '***') AS ll_title\n"
@@ -124,7 +140,7 @@ public class frPortals {
             String content = wiki.getPageText(title);
 
             for (String tmp1 : portals) {
-                if (!tmp1.contains("مثلية") && !tmp1.contains("الميم") && !tmp1.contains("إرهاب") && !content.contains("|" + tmp1.replace("بوابة:", "")) && !content.contains("لا لربط البوابات")) {
+                if (!tmp1.contains("مثلية") && !tmp1.contains("الميم") && !tmp1.contains("إرهاب") && !getPortal(content).contains("|" + tmp1.replace("بوابة:", "").replace("/مقالات_متعلقة", "").replace("_", " ")) && !content.contains("لا لربط البوابات")) {
                     portalsText = portalsText + "|" + tmp1.replace("بوابة:", "");
                     summary = summary + ": [[" + tmp1 + "]]";
                 }

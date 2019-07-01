@@ -23,7 +23,7 @@
  */
 package asammourbot;
 
-import static asammourbot.oppositeCats.addedCats;
+import static asammourbot.catarticle.addedCats;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -135,7 +135,7 @@ public class noCats {
                         content = content + "\n\n" + "[[تصنيف:" + cat + "]]\n"; //إضافة إلى نص المقالة
                     }
 
-                    Tead t = new Tead(title, sortcats(content), "روبوت:إضافة تصنيفات معادلة (" + tmp + ") لمقالة غير مصنفة " + addedCats);
+                    Tead t = new Tead(title, sortcats(content), "روبوت: إضافة تصنيفات لمقالة غير مصنفة " + addedCats);
                     t.start();
                     while (t.isAlive()) {
                         Thread.sleep(1000);

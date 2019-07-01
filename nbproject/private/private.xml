@@ -3,21 +3,10 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/noCats.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/Tead.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/fixPortals.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/frPortals.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/portalToStub.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/redirects.java</file>
             <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/main.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/moveToData.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/oppositeCats.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/enPortals.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/stubToPortal.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/addTitleURL.java</file>
+            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/Tead.java</file>
+            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/orphan.java</file>
             <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/tagger.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/cat.java</file>
-            <file>file:/C:/Users/ASammour/Documents/NetBeansProjects/ASammourBot/src/asammourbot/removeRedFiles.java</file>
         </group>
     </open-files>
 </project-private>

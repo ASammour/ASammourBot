@@ -129,8 +129,15 @@ public class specify {
 
                 String title = tmp.toString().split(",,,,,,,")[0];
                 String stub = tmp.toString().split(",,,,,,,")[1].replace("قالب:", "");
-                String content = wiki.getPageText(title).replace("{{بذرة}}", "{{" + stub + "}}");
-                Tead t = new Tead(title, content, "روبوت:تخصيص البذرة (" + key + "): [[" + tmp.toString().split(",,,,,,,")[1] + "]]");
+                String content = wiki.getPageText(title);
+                content = content.replace("{{بذرة}}", "{{" + stub + "}}");
+                content = content.replace("{{ بذرة }}", "{{" + stub + "}}");
+                content = content.replace("{{بذرة }}", "{{" + stub + "}}");
+                content = content.replace("{{ بذرة}}", "{{" + stub + "}}");
+                content = content.replace("{{بذرة|}}", "{{" + stub + "}}");
+                content = content.replace("{{بذرة| }}", "{{" + stub + "}}");
+
+                Tead t = new Tead(title, content, "روبوت:تخصيص البذرة : [[" + tmp.toString().split(",,,,,,,")[1] + "]]");
                 t.start();
                 Thread.sleep(1000);
             }

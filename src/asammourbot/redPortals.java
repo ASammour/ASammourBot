@@ -23,6 +23,7 @@
  */
 package asammourbot;
 
+import com.mysql.jdbc.StringUtils;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,6 +38,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.wikipedia.Wiki;
 
 /**
@@ -86,7 +89,7 @@ public class redPortals {
                 + "inner join page\n"
                 + "on page_id = cl_from\n"
                 + "where cl_to like \"بوابة%/مقالات_متعلقة\"\n"
-                + "and cl_to not in (select page_title from page where page_is_redirect = 0 and page_namespace = 14)\n"
+                + "and cl_to not in (select page_title from page where page_namespace = 14 and cl_to = page_title)\n"
                 + "and page_namespace = 0\n"
                 + "and page_is_redirect = 0\n"
                 + "group by page_title;");
@@ -96,20 +99,36 @@ public class redPortals {
             String title = tmp.toString().split(",,,,,,,")[0];
             String[] portals = tmp.toString().split(",,,,,,,")[1].split(",");
             String content = wiki.getPageText(title);
+            String portalNavBefore = getPortal(content);
+            String portalNavAfter = getPortal(content);
+
             for (String tmp1 : portals) {
                 String portal = tmp1.replace("/مقالات_متعلقة", "")
                         .replace("بوابة_", "")
                         .replace("_", " ");
-                content = content.replace("|" + portal + "|", "|");
-                content = content.replace("|" + portal + "}}", "}}");
-                content = content.replace("{{شريط بوابات}}", "");
-                portalsText = portalsText + " :[[" + tmp1.replace("/مقالات_متعلقة", "") + "]]";
+
+                portalNavAfter = portalNavAfter.replace("|" + portal + "|", "|");
+                portalNavAfter = portalNavAfter.replace("|" + portal + "}}", "}}");
+
+                portalsText = portalsText + " :[[بوابة:" + tmp1.replace("/مقالات_متعلقة", "").replace("بوابة_", "") + "]]";
             }
-            Tead t = new Tead(title, content, "روبوت:إزالة بوابات غير موجودة" + portalsText);
+
+            Tead t = new Tead(title, content.replace(portalNavBefore, portalNavAfter), "روبوت:إزالة بوابات غير موجودة" + portalsText);
             t.start();
             Thread.sleep(1000);
-            
-        }
 
+        }
+    }
+
+    public static String getPortal(String content) {
+        String portal = "";
+        Pattern pattern = Pattern.compile("\\{\\{شريط بوابات.*\\}\\}", Pattern.CASE_INSENSITIVE);
+        Matcher urlMatcher = pattern.matcher("");
+
+        while (urlMatcher.find()) {
+            portal = urlMatcher.group();
+            break;
+        }
+        return portal;
     }
 }

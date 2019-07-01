@@ -34,6 +34,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,7 +127,8 @@ public class quarry {
     public static void run() throws IOException, InterruptedException, ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, LoginException {
         
         String[] pages = wiki.whatTranscludesHere("قالب:استعلام", Wiki.ALL_NAMESPACES);
-
+        
+        Collections.shuffle(Arrays.asList(pages));
         for (String tmp : pages) {
             String content = wiki.getPageText(tmp);
             String template = getQuarry(tmp, content).replace("{{استعلام|", "").replace("}}", "");

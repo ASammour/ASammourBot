@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -70,8 +71,9 @@ public class removeRedFiles {
         while (rs.next()) {
             String firstName = rs.getString("page_title");
             String file = rs.getString("il_to");
+            String namespace = rs.getString("page_namespace");
 
-            records.add(firstName + ",,,,,,," + file);
+            records.add(firstName + ",,,,,,," + file + ",,,,,,," + namespace);
         }
         return records;
     }
@@ -81,6 +83,16 @@ public class removeRedFiles {
         s = s.replaceFirst(sub, "");
         tf = !s.contains(sub);
         return tf;
+    }
+    
+    
+    public static Object getKeyFromValue(LinkedHashMap hm, Object value) {
+        for (Object o : hm.keySet()) {
+            if (hm.get(o).equals(value)) {
+                return o;
+            }
+        }
+        return null;
     }
 
     public static String getGallery(String content, String regex, String file) {
@@ -92,7 +104,7 @@ public class removeRedFiles {
             String url = urlMatcher.group();
             String[] f = url.split("\n");
             for (String tmp : f) {
-                if (tmp.contains(file)) {
+                if (tmp.toLowerCase().contains(file.toLowerCase())) {
                     content = content.replace(tmp + "\n", "");
                 }
             }
@@ -101,31 +113,65 @@ public class removeRedFiles {
     }
 
     public static String getInfoBox(String content, String file) {
+        if (containsOnce(content, file) && isAllowed(content)) {
+            content = content.replace("ملف:" + file, "");
+            content = content.replace("ملف: " + file, "");
 
-        content = content.replace("ملف:" + file, "");
-        content = content.replace("ملف: " + file, "");
+            content = content.replace("File:" + file, "");
+            content = content.replace("File: " + file, "");
 
-        content = content.replace("File:" + file, "");
-        content = content.replace("File: " + file, "");
+            content = content.replace("file:" + file, "");
+            content = content.replace("file: " + file, "");
 
-        content = content.replace("file:" + file, "");
-        content = content.replace("file: " + file, "");
+            content = content.replace("ملف:" + file.replace("_", " "), "");
+            content = content.replace("ملف: " + file.replace("_", " "), "");
 
-        content = content.replace(file, "");
+            content = content.replace("File:" + file.replace("_", " "), "");
+            content = content.replace("File: " + file.replace("_", " "), "");
 
+            content = content.replace("file:" + file.replace("_", " "), "");
+            content = content.replace("file: " + file.replace("_", " "), "");
+
+            content = content.replace(file, "");
+        }
         return content;
     }
 
     public static String getSingle(String content, String file) {
+        if (isAllowed(content)) {
 
-        List<String> balanced = getBalancedSubstrings(content, '[', ']', true);
+            List<String> balanced = getBalancedSubstrings(content, '[', ']', true);
 
-        for (String tmp : balanced) {
-            if (tmp.toLowerCase().contains(file.toLowerCase())) {
-                content = content.replace(tmp, "");
+            for (String tmp : balanced) {
+                if (tmp.toLowerCase().replace("_", " ").contains(file.toLowerCase().replace("_", " "))) {
+                    content = content.replace(tmp, "");
+                }
             }
         }
+
         return content;
+    }
+
+    public static String getFileInTemplate(String content, String file) {
+        String finalContent = content;
+
+        List<String> balanced = getBalancedSubstrings(content, '=', '|', true);
+
+        for (String tmp : balanced) {
+            if (tmp.toLowerCase().replace("_", " ").contains(file.toLowerCase().replace("_", " "))
+                    && (file.length() + 3) >= tmp.length()) {
+                content = content.replace(tmp, "=\n|");
+            }
+
+        }
+
+        if (finalContent.length() - content.length() > 600) {
+            finalContent = finalContent;
+        } else {
+            finalContent = content;
+        }
+
+        return finalContent;
     }
 
     public static List<String> getBalancedSubstrings(String s, Character markStart,
@@ -176,26 +222,10 @@ public class removeRedFiles {
     }
 
     public static void run() throws IOException, ClassNotFoundException, SQLException, FileNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
-        System.out.println("dsadasda");
-        Wiki wiki = new Wiki("ar.wikipedia.org");
-        List pages = getSqlRecords("SELECT page_title, il_to\n"
-                + "FROM page\n"
-                + "JOIN imagelinks\n"
-                + "ON page_id = il_from\n"
-                + "WHERE (NOT EXISTS(\n"
-                + "SELECT 1\n"
-                + "FROM image\n"
-                + "WHERE img_name = il_to))\n"
-                + "AND (NOT EXISTS(\n"
-                + "SELECT\n"
-                + "1\n"
-                + "FROM commonswiki_p.page\n"
-                + "WHERE page_title = il_to\n"
-                + "AND page_namespace = 6))\n"
-                + "AND page_namespace = 0\n"
-                + "AND il_to not in (select page_title from page where page_title = il_to and page_is_redirect = 1 and page_namespace = 6);");
+        System.out.println("بدء تشغيل بوت إزالة الملفات الحمراء");
 
-        pages.addAll(getSqlRecords("SELECT concat(\"قالب:\",page_title) as page_title, il_to\n"
+        Wiki wiki = new Wiki("ar.wikipedia.org");
+        List pages = getSqlRecords("SELECT page_title, page_namespace, il_to\n"
                 + "FROM page\n"
                 + "JOIN imagelinks\n"
                 + "ON page_id = il_from\n"
@@ -209,44 +239,46 @@ public class removeRedFiles {
                 + "FROM commonswiki_p.page\n"
                 + "WHERE page_title = il_to\n"
                 + "AND page_namespace = 6))\n"
-                + "AND page_namespace = 10\n"
-                + "AND il_to not in (select page_title from page where page_title = il_to and page_is_redirect = 1 and page_namespace = 6);"));
+                + "AND (page_namespace = 0 or page_namespace%2 = 1 or page_namespace = 2 or page_namespace = 10 or page_namespace = 100)\n"
+                + "AND il_to not in (select page_title from page where page_title = il_to and page_is_redirect = 1 and page_namespace = 6)"
+                + "AND page_title not like \"%.js\""
+                + "AND page_title not like \"%.css\";");
 
         for (Object tmp : pages) {
             String title = tmp.toString().split(",,,,,,,")[0];
             String file = tmp.toString().split(",,,,,,,")[1];
+            String namespace = tmp.toString().split(",,,,,,,")[2];
+
+            title = (getKeyFromValue(wiki.getNamespaces(), Integer.parseInt(namespace)).toString().trim() + ":" + title).replace("^:", "");
 
             String content = wiki.getPageText(title);
-
 
             if (!content.contains(file)) {
                 file = file.replace("_", " ");
             }
-            
+
             if (!content.contains(file)) {
                 file = file.replace("_", " ");
             }
             if (!content.toLowerCase().replace("_", " ").contains(file.toLowerCase().replace("_", " "))) {
+                System.out.println("لا يوجد صورة بداخل نص المقالة****");
                 continue;
             }
-            if (containsOnce(content, file) && isAllowed(content)) {
-                content = getGallery(content, "\\<gallery[\\s\\S]{1,}\\<\\/gallery\\>", file);
-                content = getSingle(content, file);
-                content = getInfoBox(content, file);
+            content = getGallery(content, "\\<gallery[\\s\\S]{1,}\\<\\/gallery\\>", file);
+            content = getSingle(content, file);
+            content = getFileInTemplate(content, file);
 
-                if (!content.toLowerCase().replace("_", " ").contains(file.toLowerCase().replace("_", " "))) {
-                    Tead tead = new Tead(title, content, "روبوت:إزالة ملف غير موجود (" + file + ")");
-                    tead.start();
-                    while (tead.isAlive()) {
-                        Thread.sleep(1000);
-                    }
+            //content = getInfoBox(content, file);
+            if (!content.toLowerCase().replace("_", " ").contains(file.toLowerCase().replace("_", " "))) {
+                Tead tead = new Tead(title, content, "روبوت:إزالة ملف غير موجود (" + file + ")");
+                tead.start();
+                while (tead.isAlive()) {
+                    Thread.sleep(1000);
                 }
-
             }
 
         }
 
     }
-
 
 }

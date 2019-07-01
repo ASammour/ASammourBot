@@ -69,14 +69,20 @@ public class Tead extends Thread {
              * التعديل
              */
             Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.HOUR, -12);
+            calendar.add(Calendar.HOUR, -5);
             Wiki.Revision firstRev = wiki.getFirstRevision(page);
+
             if (firstRev.getTimestamp().before(calendar) 
                     && !content.contains("</pages>")
                     && wiki.getPageInfo(page).get("exists").equals(true)
-                    && wiki.getPageInfo(page).get("protection").toString().equals("{cascade=false}")) {
+                    && wiki.getPageInfo("مستخدم:"+cred.get(0).toString()+"/إيقاف").get("exists").equals(true)
+                    && wiki.getPageText("مستخدم:"+cred.get(0).toString()+"/إيقاف").equals("نعم")) {
+                
                 wiki.login(cred.get(0).toString(), cred.get(1).toString());
-                wiki.edit(page, content.replaceAll("(\r?\n){3,}", "\n\n"), summary, true, true, -2, null);
+                wiki.edit(page, content.replaceAll("(\r?\n){3,}", "\n\n"), summary.replace("روبوت:", "روبوت ("+new version ().getCurrentVersion()+"): "), true, true, -2, null);
+            }
+            else{
+                System.out.println("تم إيقاف عمل البوت، أو أن الصفحة محمية، أو أن خطأ ما قد حدث****");
             }
         } catch (IOException | LoginException ex) {
             Logger.getLogger(Tead.class.getName()).log(Level.SEVERE, null, ex);
